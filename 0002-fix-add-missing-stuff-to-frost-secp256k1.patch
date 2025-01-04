@@ -1,0 +1,178 @@
+From 31ef23b4167c3fe79f3587aabf85d3e2807de2b6 Mon Sep 17 00:00:00 2001
+From: StackOverflowExcept1on
+ <109800286+StackOverflowExcept1on@users.noreply.github.com>
+Date: Sat, 4 Jan 2025 14:17:22 +0300
+Subject: [PATCH] fix: add missing stuff to frost-secp256k1
+
+---
+ .github/workflows/main.yml           |  2 +-
+ Cargo.toml                           |  1 +
+ README.md                            |  1 +
+ book/src/dev/release-checklist.md    | 16 +++++++++-------
+ book/src/tutorial.md                 |  8 ++++----
+ book/src/user.md                     |  1 +
+ book/src/user/frost-secp256k1.md     |  1 +
+ book/src/user/frost-secp256k1/dkg.md |  1 +
+ gencode/src/main.rs                  | 13 +++++++++++++
+ 9 files changed, 32 insertions(+), 12 deletions(-)
+ create mode 100644 book/src/user/frost-secp256k1.md
+ create mode 100644 book/src/user/frost-secp256k1/dkg.md
+
+diff --git a/.github/workflows/main.yml b/.github/workflows/main.yml
+index da7d97e..39ec764 100644
+--- a/.github/workflows/main.yml
++++ b/.github/workflows/main.yml
+@@ -69,7 +69,7 @@ jobs:
+     # Skip ed448 which does not support it.
+     strategy:
+       matrix:
+-        crate: [ristretto255, ed25519, p256, secp256k1-evm, secp256k1-tr, rerandomized]
++        crate: [ristretto255, ed25519, p256, secp256k1, secp256k1-evm, secp256k1-tr, rerandomized]
+     steps:
+     - uses: actions/checkout@v4.2.2
+     - uses: dtolnay/rust-toolchain@master
+diff --git a/Cargo.toml b/Cargo.toml
+index fd0b143..c2ebee4 100644
+--- a/Cargo.toml
++++ b/Cargo.toml
+@@ -6,6 +6,7 @@ members = [
+     "frost-ed448",
+     "frost-p256",
+     "frost-ristretto255",
++    "frost-secp256k1",
+     "frost-secp256k1-evm",
+     "frost-secp256k1-tr",
+     "frost-rerandomized",
+diff --git a/README.md b/README.md
+index 01988c3..0888d21 100644
+--- a/README.md
++++ b/README.md
+@@ -9,6 +9,7 @@
+ | Ed25519 ciphersuite             | [`frost-ed25519`]       | [![crates.io](https://img.shields.io/crates/v/frost-ed25519.svg)](https://crates.io/crates/frost-ed25519)             | [![Documentation](https://docs.rs/frost-ed25519/badge.svg)](https://docs.rs/frost-ed25519)             |
+ | Ed448 ciphersuite               | [`frost-ed448`]         | [![crates.io](https://img.shields.io/crates/v/frost-ed448.svg)](https://crates.io/crates/frost-ed448)                 | [![Documentation](https://docs.rs/frost-ed448/badge.svg)](https://docs.rs/frost-ed448)                 |
+ | P-256 ciphersuite               | [`frost-p256`]          | [![crates.io](https://img.shields.io/crates/v/frost-p256.svg)](https://crates.io/crates/frost-p256)                   | [![Documentation](https://docs.rs/frost-p256/badge.svg)](https://docs.rs/frost-p256)                   |
++| secp256k1 ciphersuite           | [`frost-secp256k1`]     | [![crates.io](https://img.shields.io/crates/v/frost-secp256k1.svg)](https://crates.io/crates/frost-secp256k1)         | [![Documentation](https://docs.rs/frost-secp256k1/badge.svg)](https://docs.rs/frost-secp256k1)         |
+ | secp256k1 ciphersuite (EVM)     | [`frost-secp256k1-evm`] | [![crates.io](https://img.shields.io/crates/v/frost-secp256k1-evm.svg)](https://crates.io/crates/frost-secp256k1-evm) | [![Documentation](https://docs.rs/frost-secp256k1-evm/badge.svg)](https://docs.rs/frost-secp256k1-evm) |
+ | secp256k1 ciphersuite (Taproot) | [`frost-secp256k1-tr`]  | [![crates.io](https://img.shields.io/crates/v/frost-secp256k1-tr.svg)](https://crates.io/crates/frost-secp256k1-tr)   | [![Documentation](https://docs.rs/frost-secp256k1-tr/badge.svg)](https://docs.rs/frost-secp256k1-tr)   |
+ | Generic Re-randomized FROST     | [`frost-rerandomized`]  | [![crates.io](https://img.shields.io/crates/v/frost-rerandomized.svg)](https://crates.io/crates/frost-rerandomized)   | [![Documentation](https://docs.rs/frost-rerandomized/badge.svg)](https://docs.rs/frost-rerandomized)   |
+diff --git a/book/src/dev/release-checklist.md b/book/src/dev/release-checklist.md
+index a858efe..a403a08 100644
+--- a/book/src/dev/release-checklist.md
++++ b/book/src/dev/release-checklist.md
+@@ -22,8 +22,9 @@
+    4. [Frost p256 version number](https://github.com/ZcashFoundation/frost/blob/main/frost-p256/Cargo.toml#L8)
+    5. [Frost re randomized version number](https://github.com/ZcashFoundation/frost/blob/main/frost-rerandomized/Cargo.toml#L8)
+    6. [Frost ristretto255 version number](https://github.com/ZcashFoundation/frost/blob/main/frost-ristretto255/Cargo.toml#L8)
+-   7. [Frost secp256k1 evm version number](https://github.com/ZcashFoundation/frost/blob/main/frost-secp256k1-evm/Cargo.toml#L7)
+-   8. [Frost secp256k1 tr version number](https://github.com/ZcashFoundation/frost/blob/main/frost-secp256k1-tr/Cargo.toml#L7)
++   7. [Frost secp256k1 version number](https://github.com/ZcashFoundation/frost/blob/main/frost-secp256k1/Cargo.toml#L7)
++   8. [Frost secp256k1 evm version number](https://github.com/ZcashFoundation/frost/blob/main/frost-secp256k1-evm/Cargo.toml#L7)
++   9. [Frost secp256k1 tr version number](https://github.com/ZcashFoundation/frost/blob/main/frost-secp256k1-tr/Cargo.toml#L7)
+ 
+ 5. Decide which version to tag the release with (e.g. v0.3.0). Currently we always use the same release number for all crates, but it's possible for them to get out of sync in the future.
+ 
+@@ -75,7 +76,7 @@
+ 
+ 20. Publish it with `cargo publish -p frost-rerandomized`
+ 
+-21. Check if other crates are ready to be published: `for cs in ristretto255 ed25519 secp256k1-evm secp256k1-tr p256 ed448; do cargo publish -p frost-$cs --dry-run; done`. Fix any issues if needed.
++21. Check if other crates are ready to be published: `for cs in ristretto255 ed25519 secp256k1 secp256k1-evm secp256k1-tr p256 ed448; do cargo publish -p frost-$cs --dry-run; done`. Fix any issues if needed.
+ 
+     1. If you get an error like this:
+ 
+@@ -87,7 +88,7 @@
+ 
+     1. Use the same process as described for frost-core above (actions 1 - 3), but you can leave the changelog empty and **uncheck** “Set as the latest release”
+ 
+-23. Publish those crates: `for cs in ristretto255 ed25519 secp256k1-evm secp256k1-tr p256 ed448; do cargo publish -p frost-$cs; done`
++23. Publish those crates: `for cs in ristretto255 ed25519 secp256k1 secp256k1-evm secp256k1-tr p256 ed448; do cargo publish -p frost-$cs; done`
+ 
+ 
+ ## Confirm
+@@ -99,9 +100,10 @@
+     3. [Frost ed448](https://crates.io/crates/frost-ed448/versions)
+     4. [Frost p256](https://crates.io/crates/frost-p256/versions)
+     5. [Frost ristretto255](https://crates.io/crates/frost-ristretto255/versions)
+-    6. [Frost secp256k1 evm](https://crates.io/crates/frost-secp256k1-evm/versions)
+-    7. [Frost secp256k1 tr](https://crates.io/crates/frost-secp256k1-tr/versions)
+-    8. [Frost rerandomized](https://crates.io/crates/frost-rerandomized/versions)
++    6. [Frost secp256k1](https://crates.io/crates/frost-secp256k1/versions)
++    7. [Frost secp256k1 evm](https://crates.io/crates/frost-secp256k1-evm/versions)
++    8. [Frost secp256k1 tr](https://crates.io/crates/frost-secp256k1-tr/versions)
++    9. [Frost rerandomized](https://crates.io/crates/frost-rerandomized/versions)
+ 
+ 25. Let the team know in the #frost slack channel that the release is complete and successful
+ 
+diff --git a/book/src/tutorial.md b/book/src/tutorial.md
+index 37c1127..a06d4d6 100644
+--- a/book/src/tutorial.md
++++ b/book/src/tutorial.md
+@@ -5,10 +5,10 @@ a generic implementation of the protocol, which can't be used directly
+ without a concrete instantiation.
+ 
+ The ciphersuite crates (`frost-ristretto255`, `frost-ed25519`, `frost-ed448`,
+-`frost-p256`, `frost-secp256k1-evm` and `frost-secp256k1-tr`) provide ciphersuites
+-to use with `frost-core`, but also re-expose the `frost-core` functions without
+-generics. If you will only use a single ciphersuite, then we recommend
+-using those functions, and this tutorial will follow this approach.
++`frost-p256`, `frost-secp256k1`, `frost-secp256k1-evm` and `frost-secp256k1-tr`)
++provide ciphersuites to use with `frost-core`, but also re-expose the
++`frost-core` functions without generics. If you will only use a single ciphersuite,
++then we recommend using those functions, and this tutorial will follow this approach.
+ If you need to support multiple ciphersuites then feel free to use
+ `frost-core` along with the ciphersuite types.
+ 
+diff --git a/book/src/user.md b/book/src/user.md
+index c5d15aa..6cfa8da 100644
+--- a/book/src/user.md
++++ b/book/src/user.md
+@@ -6,5 +6,6 @@
+ - [frost-ed448](https://docs.rs/frost-ed448/)
+ - [frost-p256](https://docs.rs/frost-p256/)
+ - [frost-ristretto255](https://docs.rs/frost-ristretto255/)
++- [frost-secp256k1](https://docs.rs/frost-secp256k1/)
+ - [frost-secp256k1-evm](https://docs.rs/frost-secp256k1-evm/)
+ - [frost-secp256k1-tr](https://docs.rs/frost-secp256k1-tr/)
+diff --git a/book/src/user/frost-secp256k1.md b/book/src/user/frost-secp256k1.md
+new file mode 100644
+index 0000000..b704bdb
+--- /dev/null
++++ b/book/src/user/frost-secp256k1.md
+@@ -0,0 +1 @@
++{{#include ../../../frost-secp256k1/README.md}}
+\ No newline at end of file
+diff --git a/book/src/user/frost-secp256k1/dkg.md b/book/src/user/frost-secp256k1/dkg.md
+new file mode 100644
+index 0000000..d91ff24
+--- /dev/null
++++ b/book/src/user/frost-secp256k1/dkg.md
+@@ -0,0 +1 @@
++{{#include ../../../../frost-secp256k1/dkg.md}}
+\ No newline at end of file
+diff --git a/gencode/src/main.rs b/gencode/src/main.rs
+index 6a390a8..a76e2e4 100644
+--- a/gencode/src/main.rs
++++ b/gencode/src/main.rs
+@@ -280,6 +280,19 @@ fn main() -> ExitCode {
+                 "<E>",
+             ],
+         ),
++        (
++            "frost-secp256k1",
++            &[
++                "Secp256K1Sha256",
++                "secp256k1 curve",
++                "Secp256K1",
++                "FROST(secp256k1, SHA-256)",
++                "FROST-secp256k1-SHA256-v1",
++                "secp256k1_sha256",
++                "secp256k1",
++                "<S>",
++            ],
++        ),
+         (
+             "frost-secp256k1-evm",
+             &[
+-- 
+2.34.1
+

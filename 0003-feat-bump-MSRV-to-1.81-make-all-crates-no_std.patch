@@ -1,0 +1,619 @@
+From 12e18869ad42ae095262e37dc0acf95bfd6e46e7 Mon Sep 17 00:00:00 2001
+From: StackOverflowExcept1on
+ <109800286+StackOverflowExcept1on@users.noreply.github.com>
+Date: Sat, 4 Jan 2025 13:59:12 +0300
+Subject: [PATCH] feat: bump MSRV to 1.81, make all crates no_std
+
+---
+ .github/workflows/main.yml                  |  7 ++---
+ frost-core/CHANGELOG.md                     |  4 +++
+ frost-core/Cargo.toml                       |  9 ++----
+ frost-core/src/error.rs                     |  7 +----
+ frost-core/src/lib.rs                       |  2 +-
+ frost-core/src/scalar_mul.rs                | 23 +-------------
+ frost-core/src/tests/ciphersuite_generic.rs |  2 +-
+ frost-ed25519/Cargo.toml                    |  7 ++---
+ frost-ed25519/src/lib.rs                    |  2 +-
+ frost-ed448/Cargo.toml                      |  9 ++----
+ frost-ed448/src/lib.rs                      | 34 ++++++++++-----------
+ frost-ed448/src/tests/deserialize.rs        |  6 ++--
+ frost-p256/Cargo.toml                       |  7 ++---
+ frost-p256/src/lib.rs                       |  2 +-
+ frost-rerandomized/Cargo.toml               |  5 +--
+ frost-rerandomized/src/lib.rs               |  2 +-
+ frost-ristretto255/Cargo.toml               |  7 ++---
+ frost-ristretto255/src/lib.rs               |  2 +-
+ frost-secp256k1-evm/Cargo.toml              |  7 ++---
+ frost-secp256k1-evm/src/lib.rs              |  2 +-
+ frost-secp256k1-tr/Cargo.toml               |  7 ++---
+ frost-secp256k1-tr/src/lib.rs               |  2 +-
+ frost-secp256k1/Cargo.toml                  |  7 ++---
+ frost-secp256k1/src/lib.rs                  |  2 +-
+ 24 files changed, 57 insertions(+), 107 deletions(-)
+
+diff --git a/.github/workflows/main.yml b/.github/workflows/main.yml
+index 39ec764..f22b13b 100644
+--- a/.github/workflows/main.yml
++++ b/.github/workflows/main.yml
+@@ -25,7 +25,7 @@ jobs:
+           command: build
+ 
+   build_msrv:
+-    name: build with MSRV (1.66.1)
++    name: build with MSRV (1.81)
+     runs-on: ubuntu-latest
+ 
+     steps:
+@@ -40,7 +40,7 @@ jobs:
+       - run: cargo update -Z minimal-versions
+       # Now check that `cargo build` works with respect to the oldest possible
+       # deps and the stated MSRV
+-      - uses: dtolnay/rust-toolchain@1.66.1
++      - uses: dtolnay/rust-toolchain@1.81
+       - run: cargo build --all-features
+ 
+   # TODO: this is filling up the disk space in CI. See if there is a way to
+@@ -66,10 +66,9 @@ jobs:
+   build_no_std:
+     name: build with no_std
+     runs-on: ubuntu-latest
+-    # Skip ed448 which does not support it.
+     strategy:
+       matrix:
+-        crate: [ristretto255, ed25519, p256, secp256k1, secp256k1-evm, secp256k1-tr, rerandomized]
++        crate: [ed448, ristretto255, ed25519, p256, secp256k1, secp256k1-evm, secp256k1-tr, rerandomized]
+     steps:
+     - uses: actions/checkout@v4.2.2
+     - uses: dtolnay/rust-toolchain@master
+diff --git a/frost-core/CHANGELOG.md b/frost-core/CHANGELOG.md
+index e17ed31..24e5c8a 100644
+--- a/frost-core/CHANGELOG.md
++++ b/frost-core/CHANGELOG.md
+@@ -11,6 +11,10 @@ Entries are listed in reverse chronological order.
+   compatible signatures.
+ * Added a new ciphersuite `frost-secp256k1-evm` that uses the secp256k1
+   elliptic curve with hash keccak256.
++* Added no-std support for frost-ed448 crate. This became possible after migration to `ed448-goldilocks-plus` (fork of
++  `ed448-goldilocks`).
++* MSRV has been bumped to Rust 1.81, making all crates no-std. The `std` and `nightly` features were removed from all
++  crates.
+ 
+ ## 2.0.0
+ 
+diff --git a/frost-core/Cargo.toml b/frost-core/Cargo.toml
+index ee2271c..b322e6d 100644
+--- a/frost-core/Cargo.toml
++++ b/frost-core/Cargo.toml
+@@ -16,6 +16,7 @@ repository = "https://github.com/ZcashFoundation/frost"
+ categories = ["cryptography"]
+ keywords = ["cryptography", "crypto", "threshold", "signature", "schnorr"]
+ description = "Types and traits to support implementing Flexible Round-Optimized Schnorr Threshold signature schemes (FROST)."
++rust-version = "1.81"
+ 
+ [package.metadata.docs.rs]
+ features = ["serde"]
+@@ -32,8 +33,7 @@ postcard = { version = "1.0.0", features = ["alloc"], optional = true }
+ rand_core = { version = "0.6", default-features = false }
+ serde = { version = "1.0.160", default-features = false, features = ["derive"], optional = true }
+ serdect = { version = "0.2.0", optional = true }
+-thiserror-nostd-notrait = { version = "1.0.29", default-features = false }
+-thiserror = { version = "2.0.3", default-features = false, optional = true }
++thiserror = { version = "2.0.3", default-features = false }
+ visibility = "0.1.0"
+ zeroize = { version = "1.5.4", default-features = false, features = ["derive"] }
+ itertools = { version = "0.13.0", default-features = false }
+@@ -52,10 +52,7 @@ rand_chacha = "0.3"
+ serde_json = "1.0"
+ 
+ [features]
+-default = ["serialization", "cheater-detection", "std"]
+-#! ## Features
+-## Enable standard library support.
+-std = ["dep:thiserror"]
++default = ["serialization", "cheater-detection"]
+ ## Expose internal types, which do not have SemVer guarantees. This is an advanced
+ ## feature which can be useful if you need to build a modified version of FROST.
+ ## The docs won't list them, you will need to check the source code.
+diff --git a/frost-core/src/error.rs b/frost-core/src/error.rs
+index 78662df..c32fb0c 100644
+--- a/frost-core/src/error.rs
++++ b/frost-core/src/error.rs
+@@ -1,12 +1,7 @@
+ //! FROST Error types
+ 
+-#[cfg(feature = "std")]
+-use thiserror::Error;
+-
+-#[cfg(not(feature = "std"))]
+-use thiserror_nostd_notrait::Error;
+-
+ use crate::{Ciphersuite, Identifier};
++use thiserror::Error;
+ 
+ #[derive(Error, Debug, Clone, Copy, Eq, PartialEq)]
+ pub struct ParticipantError<C: Ciphersuite>(Identifier<C>);
+diff --git a/frost-core/src/lib.rs b/frost-core/src/lib.rs
+index 76078d9..7a36e62 100644
+--- a/frost-core/src/lib.rs
++++ b/frost-core/src/lib.rs
+@@ -1,4 +1,4 @@
+-#![cfg_attr(not(feature = "std"), no_std)]
++#![no_std]
+ #![allow(non_snake_case)]
+ // It's emitting false positives; see https://github.com/rust-lang/rust-clippy/issues/9413
+ #![allow(clippy::derive_partial_eq_without_eq)]
+diff --git a/frost-core/src/scalar_mul.rs b/frost-core/src/scalar_mul.rs
+index e8215c4..3d82b28 100644
+--- a/frost-core/src/scalar_mul.rs
++++ b/frost-core/src/scalar_mul.rs
+@@ -14,27 +14,6 @@ use alloc::vec::Vec;
+ 
+ use crate::{Ciphersuite, Element, Field, Group, Scalar};
+ 
+-/// Calculates the quotient of `self` and `rhs`, rounding the result towards positive infinity.
+-///
+-/// # Panics
+-///
+-/// This function will panic if `rhs` is 0 or the division results in overflow.
+-///
+-/// This function is similar to `div_ceil` that is [available on
+-/// Nightly](https://github.com/rust-lang/rust/issues/88581).
+-///
+-// TODO: remove this function and use `div_ceil()` instead when `int_roundings`
+-// is stabilized.
+-const fn div_ceil(lhs: usize, rhs: usize) -> usize {
+-    let d = lhs / rhs;
+-    let r = lhs % rhs;
+-    if r > 0 && rhs > 0 {
+-        d + 1
+-    } else {
+-        d
+-    }
+-}
+-
+ /// A trait for transforming a scalar generic over a ciphersuite to a non-adjacent form (NAF).
+ pub trait NonAdjacentForm<C: Ciphersuite> {
+     fn non_adjacent_form(&self, w: usize) -> Vec<i8>;
+@@ -81,7 +60,7 @@ where
+         let mut naf = vec![0; naf_length];
+ 
+         // Get the number of 64-bit limbs we need.
+-        let num_limbs: usize = div_ceil(naf_length, u64::BITS as usize);
++        let num_limbs: usize = naf_length.div_ceil(u64::BITS as usize);
+ 
+         let mut x_u64 = vec![0u64; num_limbs];
+ 
+diff --git a/frost-core/src/tests/ciphersuite_generic.rs b/frost-core/src/tests/ciphersuite_generic.rs
+index 2cf0183..45dd337 100644
+--- a/frost-core/src/tests/ciphersuite_generic.rs
++++ b/frost-core/src/tests/ciphersuite_generic.rs
+@@ -10,7 +10,7 @@ use crate::{
+     keys::PublicKeyPackage, Error, Field, Group, Identifier, Signature, SigningKey, SigningPackage,
+     VerifyingKey,
+ };
+-use alloc::vec::Vec;
++use alloc::{borrow::ToOwned, vec::Vec};
+ use rand_core::{CryptoRng, RngCore};
+ 
+ use crate::Ciphersuite;
+diff --git a/frost-ed25519/Cargo.toml b/frost-ed25519/Cargo.toml
+index add2afc..fd4d9d9 100644
+--- a/frost-ed25519/Cargo.toml
++++ b/frost-ed25519/Cargo.toml
+@@ -17,6 +17,7 @@ repository = "https://github.com/ZcashFoundation/frost"
+ categories = ["cryptography"]
+ keywords = ["cryptography", "crypto", "ed25519", "threshold", "signature"]
+ description = "A Schnorr signature scheme over Ed25519 that supports FROST."
++rust-version = "1.81"
+ 
+ [package.metadata.docs.rs]
+ features = ["serde"]
+@@ -44,11 +45,7 @@ rand_chacha = "0.3"
+ serde_json = "1.0"
+ 
+ [features]
+-nightly = []
+-default = ["serialization", "cheater-detection", "std"]
+-#! ## Features
+-## Enable standard library support.
+-std = ["frost-core/std"]
++default = ["serialization", "cheater-detection"]
+ ## Enable `serde` support for types that need to be communicated. You
+ ## can use `serde` to serialize structs with any encoder that supports
+ ## `serde` (e.g. JSON with `serde_json`).
+diff --git a/frost-ed25519/src/lib.rs b/frost-ed25519/src/lib.rs
+index 9c4bce8..334922d 100644
+--- a/frost-ed25519/src/lib.rs
++++ b/frost-ed25519/src/lib.rs
+@@ -1,4 +1,4 @@
+-#![cfg_attr(not(feature = "std"), no_std)]
++#![no_std]
+ #![allow(non_snake_case)]
+ #![deny(missing_docs)]
+ #![cfg_attr(docsrs, feature(doc_auto_cfg))]
+diff --git a/frost-ed448/Cargo.toml b/frost-ed448/Cargo.toml
+index 17ba4b5..afb468a 100644
+--- a/frost-ed448/Cargo.toml
++++ b/frost-ed448/Cargo.toml
+@@ -16,6 +16,7 @@ repository = "https://github.com/ZcashFoundation/frost"
+ categories = ["cryptography"]
+ keywords = ["cryptography", "crypto", "ed448", "threshold", "signature"]
+ description = "A Schnorr signature scheme over Ed448 that supports FROST."
++rust-version = "1.81"
+ 
+ [package.metadata.docs.rs]
+ features = ["serde"]
+@@ -23,7 +24,7 @@ rustdoc-args = ["--cfg", "docsrs"]
+ 
+ [dependencies]
+ document-features = "0.2.7"
+-ed448-goldilocks = { version = "0.9.0" }
++ed448-goldilocks-plus = { version = "0.13.3", git = "https://github.com/StackOverflowExcept1on/Ed448-Goldilocks", branch = "fix-no-std-dep", features = ["zeroize"], default-features = false }
+ frost-core = { path = "../frost-core", version = "2.0.0", default-features = false }
+ frost-rerandomized = { path = "../frost-rerandomized", version = "2.0.0", default-features = false }
+ rand_core = "0.6"
+@@ -42,11 +43,7 @@ rand_chacha = "0.3"
+ serde_json = "1.0"
+ 
+ [features]
+-nightly = []
+-default = ["serialization", "cheater-detection", "std"]
+-#! ## Features
+-## Enable standard library support.
+-std = ["frost-core/std"]
++default = ["serialization", "cheater-detection"]
+ ## Enable `serde` support for types that need to be communicated. You
+ ## can use `serde` to serialize structs with any encoder that supports
+ ## `serde` (e.g. JSON with `serde_json`).
+diff --git a/frost-ed448/src/lib.rs b/frost-ed448/src/lib.rs
+index 5652356..1ee8e0b 100644
+--- a/frost-ed448/src/lib.rs
++++ b/frost-ed448/src/lib.rs
+@@ -1,3 +1,4 @@
++#![no_std]
+ #![allow(non_snake_case)]
+ #![deny(missing_docs)]
+ #![cfg_attr(docsrs, feature(doc_auto_cfg))]
+@@ -7,11 +8,10 @@
+ 
+ extern crate alloc;
+ 
+-use std::collections::BTreeMap;
++use alloc::collections::BTreeMap;
+ 
+-use ed448_goldilocks::{
+-    curve::{edwards::CompressedEdwardsY, ExtendedPoint},
+-    Scalar,
++use ed448_goldilocks_plus::{
++    CompressedEdwardsY, EdwardsPoint, Scalar, ScalarBytes, WideScalarBytes,
+ };
+ use frost_rerandomized::RandomizedCiphersuite;
+ use rand_core::{CryptoRng, RngCore};
+@@ -44,11 +44,11 @@ impl Field for Ed448ScalarField {
+     type Serialization = [u8; 57];
+ 
+     fn zero() -> Self::Scalar {
+-        Scalar::zero()
++        Scalar::ZERO
+     }
+ 
+     fn one() -> Self::Scalar {
+-        Scalar::one()
++        Scalar::ONE
+     }
+ 
+     fn invert(scalar: &Self::Scalar) -> Result<Self::Scalar, FieldError> {
+@@ -64,11 +64,11 @@ impl Field for Ed448ScalarField {
+     }
+ 
+     fn serialize(scalar: &Self::Scalar) -> Self::Serialization {
+-        scalar.to_bytes_rfc_8032()
++        scalar.to_bytes_rfc_8032().into()
+     }
+ 
+     fn deserialize(buf: &Self::Serialization) -> Result<Self::Scalar, FieldError> {
+-        match Scalar::from_canonical_bytes(*buf) {
++        match Scalar::from_canonical_bytes(ScalarBytes::from_slice(buf)).into() {
+             Some(s) => Ok(s),
+             None => Err(FieldError::MalformedScalar),
+         }
+@@ -86,20 +86,20 @@ pub struct Ed448Group;
+ impl Group for Ed448Group {
+     type Field = Ed448ScalarField;
+ 
+-    type Element = ExtendedPoint;
++    type Element = EdwardsPoint;
+ 
+     type Serialization = [u8; 57];
+ 
+     fn cofactor() -> <Self::Field as Field>::Scalar {
+-        Scalar::one()
++        Scalar::ONE
+     }
+ 
+     fn identity() -> Self::Element {
+-        Self::Element::identity()
++        Self::Element::IDENTITY
+     }
+ 
+     fn generator() -> Self::Element {
+-        Self::Element::generator()
++        Self::Element::GENERATOR
+     }
+ 
+     fn serialize(element: &Self::Element) -> Result<Self::Serialization, GroupError> {
+@@ -111,11 +111,11 @@ impl Group for Ed448Group {
+ 
+     fn deserialize(buf: &Self::Serialization) -> Result<Self::Element, GroupError> {
+         let compressed = CompressedEdwardsY(*buf);
+-        match compressed.decompress() {
++        match compressed.decompress_unchecked().into_option() {
+             Some(point) => {
+                 if point == Self::identity() {
+                     Err(GroupError::InvalidIdentityElement)
+-                } else if point.is_torsion_free() {
++                } else if point.is_torsion_free().into() {
+                     // decompress() does not check for canonicality, so we
+                     // check by recompressing and comparing
+                     if point.compress().0 != compressed.0 {
+@@ -144,8 +144,9 @@ fn hash_to_array(inputs: &[&[u8]]) -> [u8; 114] {
+ }
+ 
+ fn hash_to_scalar(inputs: &[&[u8]]) -> Scalar {
+-    let output = hash_to_array(inputs);
+-    Scalar::from_bytes_mod_order_wide(&output)
++    let temp = hash_to_array(inputs);
++    let output = WideScalarBytes::from_slice(&temp);
++    Scalar::from_bytes_mod_order_wide(output)
+ }
+ 
+ /// Context string from the ciphersuite in the [spec]
+@@ -230,7 +231,6 @@ pub type Identifier = frost::Identifier<E>;
+ /// FROST(Ed448, SHAKE256) keys, key generation, key shares.
+ pub mod keys {
+     use super::*;
+-    use std::collections::BTreeMap;
+ 
+     /// The identifier list to use when generating key shares.
+     pub type IdentifierList<'a> = frost::keys::IdentifierList<'a, E>;
+diff --git a/frost-ed448/src/tests/deserialize.rs b/frost-ed448/src/tests/deserialize.rs
+index 6c86b77..e887334 100644
+--- a/frost-ed448/src/tests/deserialize.rs
++++ b/frost-ed448/src/tests/deserialize.rs
+@@ -1,10 +1,10 @@
+ use crate::*;
+-use ed448_goldilocks::curve::ExtendedPoint;
++use ed448_goldilocks_plus::EdwardsPoint;
+ use frost_core::Ciphersuite;
+ 
+ #[test]
+ fn check_deserialize_non_canonical() {
+-    let mut encoded_generator = ExtendedPoint::generator().compress().0;
++    let mut encoded_generator = EdwardsPoint::GENERATOR.compress().0;
+ 
+     let r = <Ed448Shake256 as Ciphersuite>::Group::deserialize(&encoded_generator);
+     assert!(r.is_ok());
+@@ -35,7 +35,7 @@ fn check_deserialize_non_prime_order() {
+ 
+ #[test]
+ fn check_deserialize_identity() {
+-    let encoded_identity = ExtendedPoint::identity().compress().0;
++    let encoded_identity = EdwardsPoint::IDENTITY.compress().0;
+ 
+     let r = <Ed448Shake256 as Ciphersuite>::Group::deserialize(&encoded_identity);
+     assert_eq!(r, Err(GroupError::InvalidIdentityElement));
+diff --git a/frost-p256/Cargo.toml b/frost-p256/Cargo.toml
+index 5b94d48..8d0ab6f 100644
+--- a/frost-p256/Cargo.toml
++++ b/frost-p256/Cargo.toml
+@@ -17,6 +17,7 @@ repository = "https://github.com/ZcashFoundation/frost"
+ categories = ["cryptography"]
+ keywords = ["cryptography", "crypto", "threshold", "signature"]
+ description = "A Schnorr signature scheme over the NIST P-256 curve that supports FROST."
++rust-version = "1.81"
+ 
+ [package.metadata.docs.rs]
+ features = ["serde"]
+@@ -43,11 +44,7 @@ rand_chacha = "0.3"
+ serde_json = "1.0"
+ 
+ [features]
+-nightly = []
+-default = ["serialization", "cheater-detection", "std"]
+-#! ## Features
+-## Enable standard library support.
+-std = ["frost-core/std"]
++default = ["serialization", "cheater-detection"]
+ ## Enable `serde` support for types that need to be communicated. You
+ ## can use `serde` to serialize structs with any encoder that supports
+ ## `serde` (e.g. JSON with `serde_json`).
+diff --git a/frost-p256/src/lib.rs b/frost-p256/src/lib.rs
+index 35c2620..b21cb8d 100644
+--- a/frost-p256/src/lib.rs
++++ b/frost-p256/src/lib.rs
+@@ -1,4 +1,4 @@
+-#![cfg_attr(not(feature = "std"), no_std)]
++#![no_std]
+ #![allow(non_snake_case)]
+ #![deny(missing_docs)]
+ #![cfg_attr(docsrs, feature(doc_auto_cfg))]
+diff --git a/frost-rerandomized/Cargo.toml b/frost-rerandomized/Cargo.toml
+index da4d244..f70d43f 100644
+--- a/frost-rerandomized/Cargo.toml
++++ b/frost-rerandomized/Cargo.toml
+@@ -17,6 +17,7 @@ repository = "https://github.com/ZcashFoundation/frost"
+ categories = ["cryptography"]
+ keywords = ["cryptography", "threshold", "signature", "schnorr", "randomized"]
+ description = "Types and traits to support implementing a re-randomized variant of Flexible Round-Optimized Schnorr Threshold signature schemes (FROST)."
++rust-version = "1.81"
+ 
+ [package.metadata.docs.rs]
+ features = ["serde"]
+@@ -34,11 +35,7 @@ rand_core = "0.6"
+ [dev-dependencies]
+ 
+ [features]
+-nightly = []
+ default = ["serialization", "cheater-detection"]
+-#! ## Features
+-## Enable standard library support.
+-std = ["frost-core/std"]
+ ## Enable `serde` support for types that need to be communicated. You
+ ## can use `serde` to serialize structs with any encoder that supports
+ ## `serde` (e.g. JSON with `serde_json`).
+diff --git a/frost-rerandomized/src/lib.rs b/frost-rerandomized/src/lib.rs
+index a309d6f..78ee354 100644
+--- a/frost-rerandomized/src/lib.rs
++++ b/frost-rerandomized/src/lib.rs
+@@ -9,7 +9,7 @@
+ //! - Each participant should call [`sign`] and send the resulting
+ //!   [`frost::round2::SignatureShare`] back to the Coordinator;
+ //! - The Coordinator should then call [`aggregate`].
+-#![cfg_attr(not(feature = "std"), no_std)]
++#![no_std]
+ #![allow(non_snake_case)]
+ 
+ extern crate alloc;
+diff --git a/frost-ristretto255/Cargo.toml b/frost-ristretto255/Cargo.toml
+index e666dc8..8504b18 100644
+--- a/frost-ristretto255/Cargo.toml
++++ b/frost-ristretto255/Cargo.toml
+@@ -13,6 +13,7 @@ repository = "https://github.com/ZcashFoundation/frost"
+ categories = ["cryptography"]
+ keywords = ["cryptography", "crypto", "ristretto", "threshold", "signature"]
+ description = "A Schnorr signature scheme over the prime-order Ristretto group that supports FROST."
++rust-version = "1.81"
+ 
+ [package.metadata.docs.rs]
+ features = ["serde"]
+@@ -40,11 +41,7 @@ rand_chacha = "0.3"
+ serde_json = "1.0"
+ 
+ [features]
+-nightly = []
+-default = ["serialization", "cheater-detection", "std"]
+-#! ## Features
+-## Enable standard library support.
+-std = ["frost-core/std"]
++default = ["serialization", "cheater-detection"]
+ ## Enable `serde` support for types that need to be communicated. You
+ ## can use `serde` to serialize structs with any encoder that supports
+ ## `serde` (e.g. JSON with `serde_json`).
+diff --git a/frost-ristretto255/src/lib.rs b/frost-ristretto255/src/lib.rs
+index 0929c22..cd376b6 100644
+--- a/frost-ristretto255/src/lib.rs
++++ b/frost-ristretto255/src/lib.rs
+@@ -1,4 +1,4 @@
+-#![cfg_attr(not(feature = "std"), no_std)]
++#![no_std]
+ #![allow(non_snake_case)]
+ #![deny(missing_docs)]
+ #![doc = include_str!("../README.md")]
+diff --git a/frost-secp256k1-evm/Cargo.toml b/frost-secp256k1-evm/Cargo.toml
+index bc752a9..0de40a9 100644
+--- a/frost-secp256k1-evm/Cargo.toml
++++ b/frost-secp256k1-evm/Cargo.toml
+@@ -16,6 +16,7 @@ repository = "https://github.com/ZcashFoundation/frost"
+ categories = ["cryptography"]
+ keywords = ["cryptography", "crypto", "threshold", "signature"]
+ description = "A Schnorr signature scheme over the secp256k1 curve that supports FROST and EVM."
++rust-version = "1.81"
+ 
+ [package.metadata.docs.rs]
+ features = ["serde"]
+@@ -42,11 +43,7 @@ rand_chacha = "0.3"
+ serde_json = "1.0"
+ 
+ [features]
+-nightly = []
+-default = ["serialization", "cheater-detection", "std"]
+-#! ## Features
+-## Enable standard library support.
+-std = ["frost-core/std"]
++default = ["serialization", "cheater-detection"]
+ ## Enable `serde` support for types that need to be communicated. You
+ ## can use `serde` to serialize structs with any encoder that supports
+ ## `serde` (e.g. JSON with `serde_json`).
+diff --git a/frost-secp256k1-evm/src/lib.rs b/frost-secp256k1-evm/src/lib.rs
+index a96ffaa..581c6f7 100644
+--- a/frost-secp256k1-evm/src/lib.rs
++++ b/frost-secp256k1-evm/src/lib.rs
+@@ -1,4 +1,4 @@
+-#![cfg_attr(not(feature = "std"), no_std)]
++#![no_std]
+ #![allow(non_snake_case)]
+ #![deny(missing_docs)]
+ #![cfg_attr(docsrs, feature(doc_auto_cfg))]
+diff --git a/frost-secp256k1-tr/Cargo.toml b/frost-secp256k1-tr/Cargo.toml
+index d769c49..4e72322 100644
+--- a/frost-secp256k1-tr/Cargo.toml
++++ b/frost-secp256k1-tr/Cargo.toml
+@@ -16,6 +16,7 @@ repository = "https://github.com/ZcashFoundation/frost"
+ categories = ["cryptography"]
+ keywords = ["cryptography", "crypto", "threshold", "signature"]
+ description = "A Schnorr signature scheme over the secp256k1 curve that supports FROST and Taproot."
++rust-version = "1.81"
+ 
+ [package.metadata.docs.rs]
+ features = ["serde"]
+@@ -43,11 +44,7 @@ secp256k1 = "0.30.0"
+ serde_json = "1.0"
+ 
+ [features]
+-nightly = []
+-default = ["serialization", "cheater-detection", "std"]
+-#! ## Features
+-## Enable standard library support.
+-std = ["frost-core/std"]
++default = ["serialization", "cheater-detection"]
+ ## Enable `serde` support for types that need to be communicated. You
+ ## can use `serde` to serialize structs with any encoder that supports
+ ## `serde` (e.g. JSON with `serde_json`).
+diff --git a/frost-secp256k1-tr/src/lib.rs b/frost-secp256k1-tr/src/lib.rs
+index f566f72..591b2e4 100644
+--- a/frost-secp256k1-tr/src/lib.rs
++++ b/frost-secp256k1-tr/src/lib.rs
+@@ -1,4 +1,4 @@
+-#![cfg_attr(not(feature = "std"), no_std)]
++#![no_std]
+ #![allow(non_snake_case)]
+ #![deny(missing_docs)]
+ #![cfg_attr(docsrs, feature(doc_auto_cfg))]
+diff --git a/frost-secp256k1/Cargo.toml b/frost-secp256k1/Cargo.toml
+index cdc8adc..97193d7 100644
+--- a/frost-secp256k1/Cargo.toml
++++ b/frost-secp256k1/Cargo.toml
+@@ -16,6 +16,7 @@ repository = "https://github.com/ZcashFoundation/frost"
+ categories = ["cryptography"]
+ keywords = ["cryptography", "crypto", "threshold", "signature"]
+ description = "A Schnorr signature scheme over the secp256k1 curve that supports FROST."
++rust-version = "1.81"
+ 
+ [package.metadata.docs.rs]
+ features = ["serde"]
+@@ -42,11 +43,7 @@ rand_chacha = "0.3"
+ serde_json = "1.0"
+ 
+ [features]
+-nightly = []
+-default = ["serialization", "cheater-detection", "std"]
+-#! ## Features
+-## Enable standard library support.
+-std = ["frost-core/std"]
++default = ["serialization", "cheater-detection"]
+ ## Enable `serde` support for types that need to be communicated. You
+ ## can use `serde` to serialize structs with any encoder that supports
+ ## `serde` (e.g. JSON with `serde_json`).
+diff --git a/frost-secp256k1/src/lib.rs b/frost-secp256k1/src/lib.rs
+index eec2c8e..9485a23 100644
+--- a/frost-secp256k1/src/lib.rs
++++ b/frost-secp256k1/src/lib.rs
+@@ -1,4 +1,4 @@
+-#![cfg_attr(not(feature = "std"), no_std)]
++#![no_std]
+ #![allow(non_snake_case)]
+ #![deny(missing_docs)]
+ #![cfg_attr(docsrs, feature(doc_auto_cfg))]
+-- 
+2.34.1
+

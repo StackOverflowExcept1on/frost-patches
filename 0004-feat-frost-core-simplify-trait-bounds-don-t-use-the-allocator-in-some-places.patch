@@ -1,0 +1,351 @@
+From b9909ab6dcfd06c9bcc9211c9cf42c45ea0980bc Mon Sep 17 00:00:00 2001
+From: StackOverflowExcept1on
+ <109800286+StackOverflowExcept1on@users.noreply.github.com>
+Date: Sat, 4 Jan 2025 14:29:39 +0300
+Subject: [PATCH] feat(frost-core): simplify trait bounds, don't use the
+ allocator in some places
+
+---
+ frost-core/src/lib.rs                         |  5 +-
+ frost-core/src/serialization.rs               | 48 +++++++------------
+ frost-core/src/signature.rs                   | 37 +++++++-------
+ .../src/tests/coefficient_commitment.rs       |  2 +-
+ frost-core/src/tests/repairable.rs            | 10 ++--
+ frost-core/src/tests/vectors.rs               |  3 +-
+ frost-core/src/tests/vectors_dkg.rs           |  2 +
+ frost-core/src/tests/vss_commitment.rs        |  2 +-
+ frost-core/src/traits.rs                      | 16 ++++---
+ 9 files changed, 62 insertions(+), 63 deletions(-)
+
+diff --git a/frost-core/src/lib.rs b/frost-core/src/lib.rs
+index 76078d9..26a1c58 100644
+--- a/frost-core/src/lib.rs
++++ b/frost-core/src/lib.rs
+@@ -272,12 +272,13 @@ where
+     fn from_hex<T: AsRef<[u8]>>(hex: T) -> Result<Self, Self::Error> {
+         let v: Vec<u8> = FromHex::from_hex(hex).map_err(|_| "invalid hex")?;
+ 
+-        match v.try_into() {
++        let ret = match v.as_slice().try_into() {
+             Ok(bytes) => <<C::Group as Group>::Field>::deserialize(&bytes)
+                 .map(|scalar| Self(scalar))
+                 .map_err(|_| "malformed scalar encoding"),
+             Err(_) => Err("malformed scalar encoding"),
+-        }
++        };
++        ret
+     }
+ }
+ 
+diff --git a/frost-core/src/serialization.rs b/frost-core/src/serialization.rs
+index fe1df7b..73195c1 100644
+--- a/frost-core/src/serialization.rs
++++ b/frost-core/src/serialization.rs
+@@ -27,10 +27,8 @@ where
+ 
+     /// Deserialize a Scalar from a serialized buffer.
+     pub fn deserialize(bytes: &[u8]) -> Result<Self, Error<C>> {
+-        let serialized: <<C::Group as Group>::Field as Field>::Serialization = bytes
+-            .to_vec()
+-            .try_into()
+-            .map_err(|_| FieldError::MalformedScalar)?;
++        let serialized: <<C::Group as Group>::Field as Field>::Serialization =
++            bytes.try_into().map_err(|_| FieldError::MalformedScalar)?;
+         let scalar = <<C::Group as Group>::Field>::deserialize(&serialized)?;
+         Ok(Self(scalar))
+     }
+@@ -59,18 +57,13 @@ where
+     where
+         D: serde::Deserializer<'de>,
+     {
+-        // Get size from the size of the zero scalar
++        // Get serialization buffer from the zero scalar
+         let zero = <<C::Group as Group>::Field as Field>::zero();
+-        let len = <<C::Group as Group>::Field as Field>::serialize(&zero)
+-            .as_ref()
+-            .len();
+-
+-        let mut bytes = vec![0u8; len];
+-        serdect::array::deserialize_hex_or_bin(&mut bytes[..], deserializer)?;
+-        let array = bytes
+-            .try_into()
+-            .map_err(|_| serde::de::Error::custom("invalid byte length"))?;
+-        <<C as Ciphersuite>::Group as Group>::Field::deserialize(&array)
++        let mut serialization = <<C::Group as Group>::Field as Field>::serialize(&zero);
++
++        serdect::array::deserialize_hex_or_bin(serialization.as_mut(), deserializer)?;
++
++        <<C as Ciphersuite>::Group as Group>::Field::deserialize(&serialization)
+             .map(|scalar| Self(scalar))
+             .map_err(serde::de::Error::custom)
+     }
+@@ -91,10 +84,8 @@ where
+     /// Deserialize an Element. Returns an error if it's malformed or is the
+     /// identity.
+     pub fn deserialize(bytes: &[u8]) -> Result<Self, Error<C>> {
+-        let serialized: <C::Group as Group>::Serialization = bytes
+-            .to_vec()
+-            .try_into()
+-            .map_err(|_| FieldError::MalformedScalar)?;
++        let serialized: <C::Group as Group>::Serialization =
++            bytes.try_into().map_err(|_| FieldError::MalformedScalar)?;
+         let scalar = <C::Group as Group>::deserialize(&serialized)?;
+         Ok(Self(scalar))
+     }
+@@ -124,19 +115,14 @@ where
+     where
+         D: serde::Deserializer<'de>,
+     {
+-        // Get size from the size of the generator
++        // Get serialization buffer from the generator
+         let generator = <C::Group>::generator();
+-        let len = <C::Group>::serialize(&generator)
+-            .expect("serializing the generator always works")
+-            .as_ref()
+-            .len();
+-
+-        let mut bytes = vec![0u8; len];
+-        serdect::array::deserialize_hex_or_bin(&mut bytes[..], deserializer)?;
+-        let array = bytes
+-            .try_into()
+-            .map_err(|_| serde::de::Error::custom("invalid byte length"))?;
+-        <C::Group as Group>::deserialize(&array)
++        let mut serialization =
++            <C::Group>::serialize(&generator).expect("serializing the generator always works");
++
++        serdect::array::deserialize_hex_or_bin(serialization.as_mut(), deserializer)?;
++
++        <C::Group as Group>::deserialize(&serialization)
+             .map(|element| Self(element))
+             .map_err(serde::de::Error::custom)
+     }
+diff --git a/frost-core/src/signature.rs b/frost-core/src/signature.rs
+index 91d3ade..506cb6e 100644
+--- a/frost-core/src/signature.rs
++++ b/frost-core/src/signature.rs
+@@ -38,34 +38,31 @@ where
+         // and get its length. Note that we can't use the identity because it can be encoded
+         // shorter in some cases (e.g. P-256, which uses SEC1 encoding).
+         let generator = <C::Group>::generator();
+-        let mut R_bytes = Vec::from(<C::Group>::serialize(&generator)?.as_ref());
+-        let R_bytes_len = R_bytes.len();
++        let mut R_serialization = <C::Group>::serialize(&generator)?;
++        let R_bytes_len = R_serialization.as_ref().len();
+ 
+-        let one = <<C::Group as Group>::Field as Field>::zero();
+-        let mut z_bytes =
+-            Vec::from(<<C::Group as Group>::Field as Field>::serialize(&one).as_ref());
+-        let z_bytes_len = z_bytes.len();
++        let zero = <<C::Group as Group>::Field as Field>::zero();
++        let mut z_serialization = <<C::Group as Group>::Field as Field>::serialize(&zero);
++        let z_bytes_len = z_serialization.as_ref().len();
+ 
+         if bytes.len() != R_bytes_len + z_bytes_len {
+             return Err(Error::MalformedSignature);
+         }
+ 
+-        R_bytes[..].copy_from_slice(bytes.get(0..R_bytes_len).ok_or(Error::MalformedSignature)?);
+-
+-        let R_serialization = &R_bytes.try_into().map_err(|_| Error::MalformedSignature)?;
++        R_serialization
++            .as_mut()
++            .copy_from_slice(bytes.get(0..R_bytes_len).ok_or(Error::MalformedSignature)?);
+ 
+         // We extract the exact length of bytes we expect, not just the remaining bytes with `bytes[R_bytes_len..]`
+-        z_bytes[..].copy_from_slice(
++        z_serialization.as_mut().copy_from_slice(
+             bytes
+                 .get(R_bytes_len..R_bytes_len + z_bytes_len)
+                 .ok_or(Error::MalformedSignature)?,
+         );
+ 
+-        let z_serialization = &z_bytes.try_into().map_err(|_| Error::MalformedSignature)?;
+-
+         Ok(Self {
+-            R: <C::Group>::deserialize(R_serialization)?,
+-            z: <<C::Group as Group>::Field>::deserialize(z_serialization)?,
++            R: <C::Group>::deserialize(&R_serialization)?,
++            z: <<C::Group as Group>::Field>::deserialize(&z_serialization)?,
+         })
+     }
+ 
+@@ -77,10 +74,16 @@ where
+     /// Converts this signature to its default byte serialization.
+     #[cfg(feature = "internals")]
+     pub fn default_serialize(&self) -> Result<Vec<u8>, Error<C>> {
+-        let mut bytes = Vec::<u8>::new();
++        let R_serialization = <C::Group>::serialize(&self.R)?;
++        let z_serialization = <<C::Group as Group>::Field>::serialize(&self.z);
++
++        let R_bytes = R_serialization.as_ref();
++        let z_bytes = z_serialization.as_ref();
++
++        let mut bytes = Vec::with_capacity(R_bytes.len() + z_bytes.len());
+ 
+-        bytes.extend(<C::Group>::serialize(&self.R)?.as_ref());
+-        bytes.extend(<<C::Group as Group>::Field>::serialize(&self.z).as_ref());
++        bytes.extend(R_bytes);
++        bytes.extend(z_bytes);
+ 
+         Ok(bytes)
+     }
+diff --git a/frost-core/src/tests/coefficient_commitment.rs b/frost-core/src/tests/coefficient_commitment.rs
+index b3392ca..533bf54 100644
+--- a/frost-core/src/tests/coefficient_commitment.rs
++++ b/frost-core/src/tests/coefficient_commitment.rs
+@@ -44,7 +44,7 @@ pub fn check_create_coefficient_commitment_error<C: Ciphersuite + PartialEq>(
+     let values = &commitment_helpers["elements"];
+     let serialized: <C::Group as Group>::Serialization =
+         <C::Group as Group>::Serialization::try_from(
+-            hex::decode(values["invalid_element"].as_str().unwrap()).unwrap(),
++            &hex::decode(values["invalid_element"].as_str().unwrap()).unwrap(),
+         )
+         .debugless_unwrap();
+ 
+diff --git a/frost-core/src/tests/repairable.rs b/frost-core/src/tests/repairable.rs
+index 532e1e0..80e4e0b 100644
+--- a/frost-core/src/tests/repairable.rs
++++ b/frost-core/src/tests/repairable.rs
+@@ -92,9 +92,11 @@ pub fn check_rts<C: Ciphersuite, R: RngCore + CryptoRng>(mut rng: R) {
+ 
+ fn generate_scalar_from_byte_string<C: Ciphersuite>(
+     bs: &str,
+-) -> <<<C as Ciphersuite>::Group as Group>::Field as Field>::Scalar {
++) -> <<C::Group as Group>::Field as Field>::Scalar {
+     let decoded = hex::decode(bs).unwrap();
+-    let out = <<C::Group as Group>::Field>::deserialize(&decoded.try_into().debugless_unwrap());
++    let out = <<C::Group as Group>::Field>::deserialize(
++        &decoded.as_slice().try_into().debugless_unwrap(),
++    );
+     out.unwrap()
+ }
+ 
+@@ -160,7 +162,7 @@ pub fn check_repair_share_step_2<C: Ciphersuite>(repair_share_helpers: &Value) {
+ 
+     let expected: Scalar<C> = repair_share_step_2::<C>(&[value_1, value_2, value_3]);
+ 
+-    let actual: <<<C as Ciphersuite>::Group as Group>::Field as Field>::Scalar =
++    let actual: <<C::Group as Group>::Field as Field>::Scalar =
+         generate_scalar_from_byte_string::<C>(values["random_scalar_sum"].as_str().unwrap());
+ 
+     assert!(actual == expected);
+@@ -198,7 +200,7 @@ pub fn check_repair_share_step_3<C: Ciphersuite, R: RngCore + CryptoRng>(
+         &commitment,
+     );
+ 
+-    let actual_sigma: <<<C as Ciphersuite>::Group as Group>::Field as Field>::Scalar =
++    let actual_sigma: <<C::Group as Group>::Field as Field>::Scalar =
+         generate_scalar_from_byte_string::<C>(sigmas["sigma_sum"].as_str().unwrap());
+     let actual: SecretShare<C> = SecretShare::new(
+         Identifier::try_from(2).unwrap(),
+diff --git a/frost-core/src/tests/vectors.rs b/frost-core/src/tests/vectors.rs
+index c11b144..950fe9a 100644
+--- a/frost-core/src/tests/vectors.rs
++++ b/frost-core/src/tests/vectors.rs
+@@ -45,7 +45,8 @@ pub fn parse_test_vectors<C: Ciphersuite>(json_vectors: &Value) -> TestVectors<C
+         .iter()
+         .map(|v| {
+             let vec = hex::decode(v.as_str().unwrap()).unwrap();
+-            <<C::Group as Group>::Field>::deserialize(&vec.try_into().debugless_unwrap()).unwrap()
++            <<C::Group as Group>::Field>::deserialize(&vec.as_slice().try_into().debugless_unwrap())
++                .unwrap()
+         })
+         .collect();
+ 
+diff --git a/frost-core/src/tests/vectors_dkg.rs b/frost-core/src/tests/vectors_dkg.rs
+index fe775bd..a0b8aba 100644
+--- a/frost-core/src/tests/vectors_dkg.rs
++++ b/frost-core/src/tests/vectors_dkg.rs
+@@ -32,12 +32,14 @@ fn json_to_scalar<C: Ciphersuite>(
+     vector: &Value,
+ ) -> <<C::Group as Group>::Field as Field>::Serialization {
+     (hex::decode(vector.as_str().unwrap()).unwrap())
++        .as_slice()
+         .try_into()
+         .debugless_unwrap()
+ }
+ 
+ fn json_to_element<C: Ciphersuite>(vector: &Value) -> <C::Group as Group>::Serialization {
+     (hex::decode(vector.as_str().unwrap()).unwrap())
++        .as_slice()
+         .try_into()
+         .debugless_unwrap()
+ }
+diff --git a/frost-core/src/tests/vss_commitment.rs b/frost-core/src/tests/vss_commitment.rs
+index 1046522..4e76873 100644
+--- a/frost-core/src/tests/vss_commitment.rs
++++ b/frost-core/src/tests/vss_commitment.rs
+@@ -92,7 +92,7 @@ pub fn check_deserialize_vss_commitment_error<C: Ciphersuite, R: RngCore + Crypt
+ 
+     let serialized: <C::Group as Group>::Serialization =
+         <C::Group as Group>::Serialization::try_from(
+-            hex::decode(values["invalid_element"].as_str().unwrap()).unwrap(),
++            &hex::decode(values["invalid_element"].as_str().unwrap()).unwrap(),
+         )
+         .debugless_unwrap();
+     // ---
+diff --git a/frost-core/src/traits.rs b/frost-core/src/traits.rs
+index 91a5056..6cb4934 100644
+--- a/frost-core/src/traits.rs
++++ b/frost-core/src/traits.rs
+@@ -25,7 +25,7 @@ use crate::{
+ /// pass-through, implemented for a type just for the ciphersuite, and calls through to another
+ /// implementation underneath, so that this trait does not have to be implemented for types you
+ /// don't own.
+-pub trait Field: Copy + Clone {
++pub trait Field: Copy {
+     /// An element of the scalar field GF(p).
+     /// The Eq/PartialEq implementation MUST be constant-time.
+     type Scalar: Add<Output = Self::Scalar>
+@@ -37,7 +37,7 @@ pub trait Field: Copy + Clone {
+         + Sub<Output = Self::Scalar>;
+ 
+     /// A unique byte array buf of fixed length N.
+-    type Serialization: AsRef<[u8]> + Debug + TryFrom<Vec<u8>>;
++    type Serialization: Clone + AsRef<[u8]> + AsMut<[u8]> + for<'a> TryFrom<&'a [u8]> + Debug;
+ 
+     /// Returns the zero element of the field, the additive identity.
+     fn zero() -> Self::Scalar;
+@@ -85,7 +85,7 @@ pub type Scalar<C> = <<<C as Ciphersuite>::Group as Group>::Field as Field>::Sca
+ /// pass-through, implemented for a type just for the ciphersuite, and calls through to another
+ /// implementation underneath, so that this trait does not have to be implemented for types you
+ /// don't own.
+-pub trait Group: Copy + Clone + PartialEq {
++pub trait Group: Copy + PartialEq {
+     /// A prime order finite field GF(q) over which all scalar values for our prime order group can
+     /// be multiplied are defined.
+     type Field: Field;
+@@ -102,7 +102,7 @@ pub trait Group: Copy + Clone + PartialEq {
+     /// A unique byte array buf of fixed length N.
+     ///
+     /// Little-endian!
+-    type Serialization: AsRef<[u8]> + Debug + TryFrom<Vec<u8>>;
++    type Serialization: Clone + AsRef<[u8]> + AsMut<[u8]> + for<'a> TryFrom<&'a [u8]> + Debug;
+ 
+     /// The order of the the quotient group when the prime order subgroup divides the order of the
+     /// full curve group.
+@@ -147,7 +147,7 @@ pub type Element<C> = <<C as Ciphersuite>::Group as Group>::Element;
+ ///
+ /// [FROST ciphersuite]: https://datatracker.ietf.org/doc/html/rfc9591#name-ciphersuites
+ // See https://github.com/ZcashFoundation/frost/issues/693 for reasoning about the 'static bound.
+-pub trait Ciphersuite: Copy + Clone + PartialEq + Debug + 'static {
++pub trait Ciphersuite: Copy + PartialEq + Debug + 'static {
+     /// The ciphersuite ID string. It should be equal to the contextString in
+     /// the spec. For new ciphersuites, this should be a string that identifies
+     /// the ciphersuite; it's recommended to use a similar format to the
+@@ -162,7 +162,11 @@ pub trait Ciphersuite: Copy + Clone + PartialEq + Debug + 'static {
+ 
+     /// A unique byte array of fixed length that is the `Group::ElementSerialization` +
+     /// `Group::ScalarSerialization`
+-    type SignatureSerialization: AsRef<[u8]> + TryFrom<Vec<u8>>;
++    type SignatureSerialization: Clone
++        + AsRef<[u8]>
++        + AsMut<[u8]>
++        + for<'a> TryFrom<&'a [u8]>
++        + Debug;
+ 
+     /// [H1] for a FROST ciphersuite.
+     ///
+-- 
+2.34.1
+
