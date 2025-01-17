@@ -1,38 +1,38 @@
-From 2a015132f92208a0e923869da75ff7fac8dd84a3 Mon Sep 17 00:00:00 2001
+From 3ebf79ef3b7f9574ec67dd6834dc18f96692fb91 Mon Sep 17 00:00:00 2001
 From: StackOverflowExcept1on
  <109800286+StackOverflowExcept1on@users.noreply.github.com>
-Date: Thu, 9 Jan 2025 21:51:00 +0300
+Date: Fri, 17 Jan 2025 07:40:30 +0300
 Subject: [PATCH] feat: bump MSRV to 1.81, make all crates no_std
 
 ---
- .github/workflows/main.yml                  |  7 ++---
- frost-core/CHANGELOG.md                     |  4 +++
- frost-core/Cargo.toml                       |  9 ++----
- frost-core/src/error.rs                     |  7 +----
- frost-core/src/lib.rs                       |  2 +-
- frost-core/src/scalar_mul.rs                | 23 +-------------
- frost-core/src/tests/ciphersuite_generic.rs |  2 +-
- frost-ed25519/Cargo.toml                    |  7 ++---
- frost-ed25519/src/lib.rs                    |  2 +-
- frost-ed448/Cargo.toml                      |  9 ++----
- frost-ed448/src/lib.rs                      | 34 ++++++++++-----------
- frost-ed448/src/tests/deserialize.rs        |  6 ++--
- frost-p256/Cargo.toml                       |  7 ++---
- frost-p256/src/lib.rs                       |  2 +-
- frost-rerandomized/Cargo.toml               |  5 +--
- frost-rerandomized/src/lib.rs               |  2 +-
- frost-ristretto255/Cargo.toml               |  7 ++---
- frost-ristretto255/src/lib.rs               |  2 +-
- frost-secp256k1-evm/Cargo.toml              |  7 ++---
- frost-secp256k1-evm/src/lib.rs              |  2 +-
- frost-secp256k1-tr/Cargo.toml               |  7 ++---
- frost-secp256k1-tr/src/lib.rs               |  2 +-
- frost-secp256k1/Cargo.toml                  |  7 ++---
- frost-secp256k1/src/lib.rs                  |  2 +-
+ .github/workflows/main.yml           |  7 +++---
+ Cargo.toml                           |  1 +
+ frost-core/CHANGELOG.md              |  4 ++++
+ frost-core/Cargo.toml                |  9 +++-----
+ frost-core/src/error.rs              |  7 +-----
+ frost-core/src/lib.rs                |  2 +-
+ frost-core/src/scalar_mul.rs         | 23 +------------------
+ frost-ed25519/Cargo.toml             |  8 ++-----
+ frost-ed25519/src/lib.rs             |  2 +-
+ frost-ed448/Cargo.toml               |  9 +++-----
+ frost-ed448/src/lib.rs               | 34 ++++++++++++++--------------
+ frost-ed448/src/tests/deserialize.rs |  6 ++---
+ frost-p256/Cargo.toml                |  7 ++----
+ frost-p256/src/lib.rs                |  2 +-
+ frost-rerandomized/Cargo.toml        |  5 +---
+ frost-rerandomized/src/lib.rs        |  2 +-
+ frost-ristretto255/Cargo.toml        |  7 ++----
+ frost-ristretto255/src/lib.rs        |  2 +-
+ frost-secp256k1-evm/Cargo.toml       |  7 ++----
+ frost-secp256k1-evm/src/lib.rs       |  2 +-
+ frost-secp256k1-tr/Cargo.toml        |  7 ++----
+ frost-secp256k1-tr/src/lib.rs        |  2 +-
+ frost-secp256k1/Cargo.toml           |  7 ++----
+ frost-secp256k1/src/lib.rs           |  2 +-
  24 files changed, 57 insertions(+), 107 deletions(-)
 
 diff --git a/.github/workflows/main.yml b/.github/workflows/main.yml
-index 39ec764..f22b13b 100644
+index 3a3721e..2aa5165 100644
 --- a/.github/workflows/main.yml
 +++ b/.github/workflows/main.yml
 @@ -25,7 +25,7 @@ jobs:
@@ -65,12 +65,24 @@ index 39ec764..f22b13b 100644
      steps:
      - uses: actions/checkout@v4.2.2
      - uses: dtolnay/rust-toolchain@master
+diff --git a/Cargo.toml b/Cargo.toml
+index 7f5d0a3..30c3054 100644
+--- a/Cargo.toml
++++ b/Cargo.toml
+@@ -16,6 +16,7 @@ members = [
+ 
+ [workspace.package]
+ edition = "2021"
++rust-version = "1.81"
+ version = "2.1.0"
+ authors = [
+     "Deirdre Connolly <durumcrustulum@gmail.com>",
 diff --git a/frost-core/CHANGELOG.md b/frost-core/CHANGELOG.md
-index e17ed31..24e5c8a 100644
+index 1fc774d..42123b0 100644
 --- a/frost-core/CHANGELOG.md
 +++ b/frost-core/CHANGELOG.md
-@@ -11,6 +11,10 @@ Entries are listed in reverse chronological order.
-   compatible signatures.
+@@ -6,6 +6,10 @@ Entries are listed in reverse chronological order.
+ 
  * Added a new ciphersuite `frost-secp256k1-evm` that uses the secp256k1
    elliptic curve with hash keccak256.
 +* Added no-std support for frost-ed448 crate. This became possible after migration to `ed448-goldilocks-plus` (fork of
@@ -78,21 +90,21 @@ index e17ed31..24e5c8a 100644
 +* MSRV has been bumped to Rust 1.81, making all crates no-std. The `std` and `nightly` features were removed from all
 +  crates.
  
- ## 2.0.0
+ ## 2.1.0
  
 diff --git a/frost-core/Cargo.toml b/frost-core/Cargo.toml
-index ee2271c..b322e6d 100644
+index a013a9c..1aaee7c 100644
 --- a/frost-core/Cargo.toml
 +++ b/frost-core/Cargo.toml
-@@ -16,6 +16,7 @@ repository = "https://github.com/ZcashFoundation/frost"
- categories = ["cryptography"]
- keywords = ["cryptography", "crypto", "threshold", "signature", "schnorr"]
- description = "Types and traits to support implementing Flexible Round-Optimized Schnorr Threshold signature schemes (FROST)."
-+rust-version = "1.81"
- 
- [package.metadata.docs.rs]
- features = ["serde"]
-@@ -32,8 +33,7 @@ postcard = { version = "1.0.0", features = ["alloc"], optional = true }
+@@ -1,6 +1,7 @@
+ [package]
+ name = "frost-core"
+ edition.workspace = true
++rust-version.workspace = true
+ version.workspace = true
+ authors.workspace = true
+ readme = "README.md"
+@@ -25,8 +26,7 @@ postcard = { version = "1.0.0", features = ["alloc"], optional = true }
  rand_core = { version = "0.6", default-features = false }
  serde = { version = "1.0.160", default-features = false, features = ["derive"], optional = true }
  serdect = { version = "0.2.0", optional = true }
@@ -101,9 +113,9 @@ index ee2271c..b322e6d 100644
 +thiserror = { version = "2.0.3", default-features = false }
  visibility = "0.1.0"
  zeroize = { version = "1.5.4", default-features = false, features = ["derive"] }
- itertools = { version = "0.13.0", default-features = false }
-@@ -52,10 +52,7 @@ rand_chacha = "0.3"
- serde_json = "1.0"
+ itertools = { version = "0.14.0", default-features = false }
+@@ -45,10 +45,7 @@ rand_chacha.workspace = true
+ serde_json.workspace = true
  
  [features]
 -default = ["serialization", "cheater-detection", "std"]
@@ -183,33 +195,21 @@ index e8215c4..3d82b28 100644
  
          let mut x_u64 = vec![0u64; num_limbs];
  
-diff --git a/frost-core/src/tests/ciphersuite_generic.rs b/frost-core/src/tests/ciphersuite_generic.rs
-index 2cf0183..45dd337 100644
---- a/frost-core/src/tests/ciphersuite_generic.rs
-+++ b/frost-core/src/tests/ciphersuite_generic.rs
-@@ -10,7 +10,7 @@ use crate::{
-     keys::PublicKeyPackage, Error, Field, Group, Identifier, Signature, SigningKey, SigningPackage,
-     VerifyingKey,
- };
--use alloc::vec::Vec;
-+use alloc::{borrow::ToOwned, vec::Vec};
- use rand_core::{CryptoRng, RngCore};
- 
- use crate::Ciphersuite;
 diff --git a/frost-ed25519/Cargo.toml b/frost-ed25519/Cargo.toml
-index add2afc..fd4d9d9 100644
+index b6d26d5..b3d9947 100644
 --- a/frost-ed25519/Cargo.toml
 +++ b/frost-ed25519/Cargo.toml
-@@ -17,6 +17,7 @@ repository = "https://github.com/ZcashFoundation/frost"
- categories = ["cryptography"]
- keywords = ["cryptography", "crypto", "ed25519", "threshold", "signature"]
- description = "A Schnorr signature scheme over Ed25519 that supports FROST."
-+rust-version = "1.81"
- 
- [package.metadata.docs.rs]
- features = ["serde"]
-@@ -44,11 +45,7 @@ rand_chacha = "0.3"
- serde_json = "1.0"
+@@ -1,7 +1,7 @@
+ [package]
+ name = "frost-ed25519"
+ edition.workspace = true
+-
++rust-version.workspace = true
+ version.workspace = true
+ authors.workspace = true
+ readme = "README.md"
+@@ -37,11 +37,7 @@ rand_chacha.workspace = true
+ serde_json.workspace = true
  
  [features]
 -nightly = []
@@ -232,28 +232,28 @@ index 9c4bce8..334922d 100644
  #![deny(missing_docs)]
  #![cfg_attr(docsrs, feature(doc_auto_cfg))]
 diff --git a/frost-ed448/Cargo.toml b/frost-ed448/Cargo.toml
-index 17ba4b5..b842383 100644
+index 16282a9..6735698 100644
 --- a/frost-ed448/Cargo.toml
 +++ b/frost-ed448/Cargo.toml
-@@ -16,6 +16,7 @@ repository = "https://github.com/ZcashFoundation/frost"
- categories = ["cryptography"]
- keywords = ["cryptography", "crypto", "ed448", "threshold", "signature"]
- description = "A Schnorr signature scheme over Ed448 that supports FROST."
-+rust-version = "1.81"
- 
- [package.metadata.docs.rs]
- features = ["serde"]
-@@ -23,7 +24,7 @@ rustdoc-args = ["--cfg", "docsrs"]
+@@ -1,6 +1,7 @@
+ [package]
+ name = "frost-ed448"
+ edition.workspace = true
++rust-version.workspace = true
+ version.workspace = true
+ authors.workspace = true
+ readme = "README.md"
+@@ -16,7 +17,7 @@ rustdoc-args = ["--cfg", "docsrs"]
  
  [dependencies]
- document-features = "0.2.7"
+ document-features.workspace = true
 -ed448-goldilocks = { version = "0.9.0" }
 +ed448-goldilocks-plus = { version = "0.13.3", features = ["zeroize"], default-features = false }
- frost-core = { path = "../frost-core", version = "2.0.0", default-features = false }
- frost-rerandomized = { path = "../frost-rerandomized", version = "2.0.0", default-features = false }
- rand_core = "0.6"
-@@ -42,11 +43,7 @@ rand_chacha = "0.3"
- serde_json = "1.0"
+ frost-core = { path = "../frost-core", version = "2.1.0", default-features = false }
+ frost-rerandomized = { path = "../frost-rerandomized", version = "2.1.0", default-features = false }
+ rand_core.workspace = true
+@@ -35,11 +36,7 @@ rand_chacha.workspace = true
+ serde_json.workspace = true
  
  [features]
 -nightly = []
@@ -403,19 +403,19 @@ index 6c86b77..e887334 100644
      let r = <Ed448Shake256 as Ciphersuite>::Group::deserialize(&encoded_identity);
      assert_eq!(r, Err(GroupError::InvalidIdentityElement));
 diff --git a/frost-p256/Cargo.toml b/frost-p256/Cargo.toml
-index 5b94d48..8d0ab6f 100644
+index dc5e3ed..1823e68 100644
 --- a/frost-p256/Cargo.toml
 +++ b/frost-p256/Cargo.toml
-@@ -17,6 +17,7 @@ repository = "https://github.com/ZcashFoundation/frost"
- categories = ["cryptography"]
- keywords = ["cryptography", "crypto", "threshold", "signature"]
- description = "A Schnorr signature scheme over the NIST P-256 curve that supports FROST."
-+rust-version = "1.81"
- 
- [package.metadata.docs.rs]
- features = ["serde"]
-@@ -43,11 +44,7 @@ rand_chacha = "0.3"
- serde_json = "1.0"
+@@ -1,6 +1,7 @@
+ [package]
+ name = "frost-p256"
+ edition.workspace = true
++rust-version.workspace = true
+ version.workspace = true
+ authors.workspace = true
+ readme = "README.md"
+@@ -35,11 +36,7 @@ rand_chacha.workspace = true
+ serde_json.workspace = true
  
  [features]
 -nightly = []
@@ -438,18 +438,18 @@ index 35c2620..b21cb8d 100644
  #![deny(missing_docs)]
  #![cfg_attr(docsrs, feature(doc_auto_cfg))]
 diff --git a/frost-rerandomized/Cargo.toml b/frost-rerandomized/Cargo.toml
-index da4d244..f70d43f 100644
+index 878f710..6a64529 100644
 --- a/frost-rerandomized/Cargo.toml
 +++ b/frost-rerandomized/Cargo.toml
-@@ -17,6 +17,7 @@ repository = "https://github.com/ZcashFoundation/frost"
- categories = ["cryptography"]
- keywords = ["cryptography", "threshold", "signature", "schnorr", "randomized"]
- description = "Types and traits to support implementing a re-randomized variant of Flexible Round-Optimized Schnorr Threshold signature schemes (FROST)."
-+rust-version = "1.81"
- 
- [package.metadata.docs.rs]
- features = ["serde"]
-@@ -34,11 +35,7 @@ rand_core = "0.6"
+@@ -1,6 +1,7 @@
+ [package]
+ name = "frost-rerandomized"
+ edition.workspace = true
++rust-version.workspace = true
+ version.workspace = true
+ authors.workspace = true
+ readme = "README.md"
+@@ -26,11 +27,7 @@ rand_core.workspace = true
  [dev-dependencies]
  
  [features]
@@ -475,19 +475,19 @@ index a309d6f..78ee354 100644
  
  extern crate alloc;
 diff --git a/frost-ristretto255/Cargo.toml b/frost-ristretto255/Cargo.toml
-index e666dc8..8504b18 100644
+index ff67d89..b1f35ee 100644
 --- a/frost-ristretto255/Cargo.toml
 +++ b/frost-ristretto255/Cargo.toml
-@@ -13,6 +13,7 @@ repository = "https://github.com/ZcashFoundation/frost"
- categories = ["cryptography"]
- keywords = ["cryptography", "crypto", "ristretto", "threshold", "signature"]
- description = "A Schnorr signature scheme over the prime-order Ristretto group that supports FROST."
-+rust-version = "1.81"
- 
- [package.metadata.docs.rs]
- features = ["serde"]
-@@ -40,11 +41,7 @@ rand_chacha = "0.3"
- serde_json = "1.0"
+@@ -1,6 +1,7 @@
+ [package]
+ name = "frost-ristretto255"
+ edition.workspace = true
++rust-version.workspace = true
+ version.workspace = true
+ authors.workspace = true
+ readme = "README.md"
+@@ -36,11 +37,7 @@ rand_chacha.workspace = true
+ serde_json.workspace = true
  
  [features]
 -nightly = []
@@ -510,19 +510,19 @@ index 0929c22..cd376b6 100644
  #![deny(missing_docs)]
  #![doc = include_str!("../README.md")]
 diff --git a/frost-secp256k1-evm/Cargo.toml b/frost-secp256k1-evm/Cargo.toml
-index bc752a9..0de40a9 100644
+index cfa56ad..62b4c0f 100644
 --- a/frost-secp256k1-evm/Cargo.toml
 +++ b/frost-secp256k1-evm/Cargo.toml
-@@ -16,6 +16,7 @@ repository = "https://github.com/ZcashFoundation/frost"
- categories = ["cryptography"]
- keywords = ["cryptography", "crypto", "threshold", "signature"]
- description = "A Schnorr signature scheme over the secp256k1 curve that supports FROST and EVM."
-+rust-version = "1.81"
- 
- [package.metadata.docs.rs]
- features = ["serde"]
-@@ -42,11 +43,7 @@ rand_chacha = "0.3"
- serde_json = "1.0"
+@@ -1,6 +1,7 @@
+ [package]
+ name = "frost-secp256k1-evm"
+ edition.workspace = true
++rust-version.workspace = true
+ version.workspace = true
+ authors.workspace = true
+ readme = "README.md"
+@@ -35,11 +36,7 @@ rand_chacha.workspace = true
+ serde_json.workspace = true
  
  [features]
 -nightly = []
@@ -545,19 +545,19 @@ index a96ffaa..581c6f7 100644
  #![deny(missing_docs)]
  #![cfg_attr(docsrs, feature(doc_auto_cfg))]
 diff --git a/frost-secp256k1-tr/Cargo.toml b/frost-secp256k1-tr/Cargo.toml
-index d769c49..4e72322 100644
+index 3a2292c..4e590e4 100644
 --- a/frost-secp256k1-tr/Cargo.toml
 +++ b/frost-secp256k1-tr/Cargo.toml
-@@ -16,6 +16,7 @@ repository = "https://github.com/ZcashFoundation/frost"
- categories = ["cryptography"]
- keywords = ["cryptography", "crypto", "threshold", "signature"]
- description = "A Schnorr signature scheme over the secp256k1 curve that supports FROST and Taproot."
-+rust-version = "1.81"
- 
- [package.metadata.docs.rs]
- features = ["serde"]
-@@ -43,11 +44,7 @@ secp256k1 = "0.30.0"
- serde_json = "1.0"
+@@ -1,6 +1,7 @@
+ [package]
+ name = "frost-secp256k1-tr"
+ edition.workspace = true
++rust-version.workspace = true
+ version.workspace = true
+ authors.workspace = true
+ readme = "README.md"
+@@ -36,11 +37,7 @@ secp256k1 = "0.30.0"
+ serde_json.workspace = true
  
  [features]
 -nightly = []
@@ -580,19 +580,19 @@ index f566f72..591b2e4 100644
  #![deny(missing_docs)]
  #![cfg_attr(docsrs, feature(doc_auto_cfg))]
 diff --git a/frost-secp256k1/Cargo.toml b/frost-secp256k1/Cargo.toml
-index cdc8adc..97193d7 100644
+index 4a6ac8e..0277875 100644
 --- a/frost-secp256k1/Cargo.toml
 +++ b/frost-secp256k1/Cargo.toml
-@@ -16,6 +16,7 @@ repository = "https://github.com/ZcashFoundation/frost"
- categories = ["cryptography"]
- keywords = ["cryptography", "crypto", "threshold", "signature"]
- description = "A Schnorr signature scheme over the secp256k1 curve that supports FROST."
-+rust-version = "1.81"
- 
- [package.metadata.docs.rs]
- features = ["serde"]
-@@ -42,11 +43,7 @@ rand_chacha = "0.3"
- serde_json = "1.0"
+@@ -1,6 +1,7 @@
+ [package]
+ name = "frost-secp256k1"
+ edition.workspace = true
++rust-version.workspace = true
+ version.workspace = true
+ authors.workspace = true
+ readme = "README.md"
+@@ -35,11 +36,7 @@ rand_chacha.workspace = true
+ serde_json.workspace = true
  
  [features]
 -nightly = []

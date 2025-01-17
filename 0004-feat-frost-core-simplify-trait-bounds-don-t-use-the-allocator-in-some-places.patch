@@ -1,7 +1,7 @@
-From b9909ab6dcfd06c9bcc9211c9cf42c45ea0980bc Mon Sep 17 00:00:00 2001
+From 58b366f6f4601499d842a9712d86e1c1aafe46d6 Mon Sep 17 00:00:00 2001
 From: StackOverflowExcept1on
  <109800286+StackOverflowExcept1on@users.noreply.github.com>
-Date: Sat, 4 Jan 2025 14:29:39 +0300
+Date: Thu, 16 Jan 2025 13:44:52 +0300
 Subject: [PATCH] feat(frost-core): simplify trait bounds, don't use the
  allocator in some places
 
@@ -18,7 +18,7 @@ Subject: [PATCH] feat(frost-core): simplify trait bounds, don't use the
  9 files changed, 62 insertions(+), 63 deletions(-)
 
 diff --git a/frost-core/src/lib.rs b/frost-core/src/lib.rs
-index 76078d9..26a1c58 100644
+index 7a36e62..a016e86 100644
 --- a/frost-core/src/lib.rs
 +++ b/frost-core/src/lib.rs
 @@ -272,12 +272,13 @@ where
@@ -120,7 +120,7 @@ index fe1df7b..73195c1 100644
              .map_err(serde::de::Error::custom)
      }
 diff --git a/frost-core/src/signature.rs b/frost-core/src/signature.rs
-index 91d3ade..506cb6e 100644
+index 9152769..02ccaac 100644
 --- a/frost-core/src/signature.rs
 +++ b/frost-core/src/signature.rs
 @@ -38,34 +38,31 @@ where
@@ -171,8 +171,8 @@ index 91d3ade..506cb6e 100644
  
 @@ -77,10 +74,16 @@ where
      /// Converts this signature to its default byte serialization.
-     #[cfg(feature = "internals")]
-     pub fn default_serialize(&self) -> Result<Vec<u8>, Error<C>> {
+     #[cfg_attr(feature = "internals", visibility::make(pub))]
+     pub(crate) fn default_serialize(&self) -> Result<Vec<u8>, Error<C>> {
 -        let mut bytes = Vec::<u8>::new();
 +        let R_serialization = <C::Group>::serialize(&self.R)?;
 +        let z_serialization = <<C::Group as Group>::Field>::serialize(&self.z);
@@ -253,7 +253,7 @@ index c11b144..950fe9a 100644
          .collect();
  
 diff --git a/frost-core/src/tests/vectors_dkg.rs b/frost-core/src/tests/vectors_dkg.rs
-index fe775bd..a0b8aba 100644
+index 894eda2..f91c80e 100644
 --- a/frost-core/src/tests/vectors_dkg.rs
 +++ b/frost-core/src/tests/vectors_dkg.rs
 @@ -32,12 +32,14 @@ fn json_to_scalar<C: Ciphersuite>(

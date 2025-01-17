@@ -3,10 +3,12 @@ set -ex
 
 export LANG="en_US.UTF-8"
 COMMIT_DATE="$(date)"
+# COMMIT_HASH="94dba95d8e44974fb4bf4314b1b8eac5844e06b7"
 
-# tested on 39b61ec9da75c73476f1573a0781fb87069d86b1
+rm -rf frost
 git clone git@github.com:ZcashFoundation/frost.git
 cd frost
+# git checkout "$COMMIT_HASH"
 
 cp -r frost-secp256k1 frost-secp256k1-backup
 
