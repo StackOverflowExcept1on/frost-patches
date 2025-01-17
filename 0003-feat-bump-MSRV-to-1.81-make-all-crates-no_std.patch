@@ -1,35 +1,35 @@
-From 3ebf79ef3b7f9574ec67dd6834dc18f96692fb91 Mon Sep 17 00:00:00 2001
+From e19d30ad55de6e914f17180b7bbc0e1d3945ffb7 Mon Sep 17 00:00:00 2001
 From: StackOverflowExcept1on
  <109800286+StackOverflowExcept1on@users.noreply.github.com>
-Date: Fri, 17 Jan 2025 07:40:30 +0300
+Date: Fri, 17 Jan 2025 15:24:16 +0300
 Subject: [PATCH] feat: bump MSRV to 1.81, make all crates no_std
 
 ---
  .github/workflows/main.yml           |  7 +++---
  Cargo.toml                           |  1 +
  frost-core/CHANGELOG.md              |  4 ++++
- frost-core/Cargo.toml                |  9 +++-----
+ frost-core/Cargo.toml                |  8 +++----
  frost-core/src/error.rs              |  7 +-----
  frost-core/src/lib.rs                |  2 +-
  frost-core/src/scalar_mul.rs         | 23 +------------------
- frost-ed25519/Cargo.toml             |  8 ++-----
+ frost-ed25519/Cargo.toml             |  7 ++----
  frost-ed25519/src/lib.rs             |  2 +-
- frost-ed448/Cargo.toml               |  9 +++-----
+ frost-ed448/Cargo.toml               |  8 +++----
  frost-ed448/src/lib.rs               | 34 ++++++++++++++--------------
  frost-ed448/src/tests/deserialize.rs |  6 ++---
- frost-p256/Cargo.toml                |  7 ++----
+ frost-p256/Cargo.toml                |  6 ++---
  frost-p256/src/lib.rs                |  2 +-
- frost-rerandomized/Cargo.toml        |  5 +---
+ frost-rerandomized/Cargo.toml        |  4 +---
  frost-rerandomized/src/lib.rs        |  2 +-
- frost-ristretto255/Cargo.toml        |  7 ++----
+ frost-ristretto255/Cargo.toml        |  6 ++---
  frost-ristretto255/src/lib.rs        |  2 +-
- frost-secp256k1-evm/Cargo.toml       |  7 ++----
+ frost-secp256k1-evm/Cargo.toml       |  6 ++---
  frost-secp256k1-evm/src/lib.rs       |  2 +-
- frost-secp256k1-tr/Cargo.toml        |  7 ++----
+ frost-secp256k1-tr/Cargo.toml        |  6 ++---
  frost-secp256k1-tr/src/lib.rs        |  2 +-
- frost-secp256k1/Cargo.toml           |  7 ++----
+ frost-secp256k1/Cargo.toml           |  6 ++---
  frost-secp256k1/src/lib.rs           |  2 +-
- 24 files changed, 57 insertions(+), 107 deletions(-)
+ 24 files changed, 57 insertions(+), 98 deletions(-)
 
 diff --git a/.github/workflows/main.yml b/.github/workflows/main.yml
 index 3a3721e..2aa5165 100644
@@ -93,7 +93,7 @@ index 1fc774d..42123b0 100644
  ## 2.1.0
  
 diff --git a/frost-core/Cargo.toml b/frost-core/Cargo.toml
-index a013a9c..1aaee7c 100644
+index a013a9c..5bf94c8 100644
 --- a/frost-core/Cargo.toml
 +++ b/frost-core/Cargo.toml
 @@ -1,6 +1,7 @@
@@ -114,15 +114,15 @@ index a013a9c..1aaee7c 100644
  visibility = "0.1.0"
  zeroize = { version = "1.5.4", default-features = false, features = ["derive"] }
  itertools = { version = "0.14.0", default-features = false }
-@@ -45,10 +45,7 @@ rand_chacha.workspace = true
+@@ -45,10 +45,8 @@ rand_chacha.workspace = true
  serde_json.workspace = true
  
  [features]
 -default = ["serialization", "cheater-detection", "std"]
--#! ## Features
++default = ["serialization", "cheater-detection"]
+ #! ## Features
 -## Enable standard library support.
 -std = ["dep:thiserror"]
-+default = ["serialization", "cheater-detection"]
  ## Expose internal types, which do not have SemVer guarantees. This is an advanced
  ## feature which can be useful if you need to build a modified version of FROST.
  ## The docs won't list them, you will need to check the source code.
@@ -196,7 +196,7 @@ index e8215c4..3d82b28 100644
          let mut x_u64 = vec![0u64; num_limbs];
  
 diff --git a/frost-ed25519/Cargo.toml b/frost-ed25519/Cargo.toml
-index b6d26d5..b3d9947 100644
+index b6d26d5..4cf912e 100644
 --- a/frost-ed25519/Cargo.toml
 +++ b/frost-ed25519/Cargo.toml
 @@ -1,7 +1,7 @@
@@ -208,16 +208,16 @@ index b6d26d5..b3d9947 100644
  version.workspace = true
  authors.workspace = true
  readme = "README.md"
-@@ -37,11 +37,7 @@ rand_chacha.workspace = true
+@@ -37,11 +37,8 @@ rand_chacha.workspace = true
  serde_json.workspace = true
  
  [features]
 -nightly = []
 -default = ["serialization", "cheater-detection", "std"]
--#! ## Features
++default = ["serialization", "cheater-detection"]
+ #! ## Features
 -## Enable standard library support.
 -std = ["frost-core/std"]
-+default = ["serialization", "cheater-detection"]
  ## Enable `serde` support for types that need to be communicated. You
  ## can use `serde` to serialize structs with any encoder that supports
  ## `serde` (e.g. JSON with `serde_json`).
@@ -232,7 +232,7 @@ index 9c4bce8..334922d 100644
  #![deny(missing_docs)]
  #![cfg_attr(docsrs, feature(doc_auto_cfg))]
 diff --git a/frost-ed448/Cargo.toml b/frost-ed448/Cargo.toml
-index 16282a9..6735698 100644
+index 16282a9..6c1034d 100644
 --- a/frost-ed448/Cargo.toml
 +++ b/frost-ed448/Cargo.toml
 @@ -1,6 +1,7 @@
@@ -252,16 +252,16 @@ index 16282a9..6735698 100644
  frost-core = { path = "../frost-core", version = "2.1.0", default-features = false }
  frost-rerandomized = { path = "../frost-rerandomized", version = "2.1.0", default-features = false }
  rand_core.workspace = true
-@@ -35,11 +36,7 @@ rand_chacha.workspace = true
+@@ -35,11 +36,8 @@ rand_chacha.workspace = true
  serde_json.workspace = true
  
  [features]
 -nightly = []
 -default = ["serialization", "cheater-detection", "std"]
--#! ## Features
++default = ["serialization", "cheater-detection"]
+ #! ## Features
 -## Enable standard library support.
 -std = ["frost-core/std"]
-+default = ["serialization", "cheater-detection"]
  ## Enable `serde` support for types that need to be communicated. You
  ## can use `serde` to serialize structs with any encoder that supports
  ## `serde` (e.g. JSON with `serde_json`).
@@ -403,7 +403,7 @@ index 6c86b77..e887334 100644
      let r = <Ed448Shake256 as Ciphersuite>::Group::deserialize(&encoded_identity);
      assert_eq!(r, Err(GroupError::InvalidIdentityElement));
 diff --git a/frost-p256/Cargo.toml b/frost-p256/Cargo.toml
-index dc5e3ed..1823e68 100644
+index dc5e3ed..739a4d6 100644
 --- a/frost-p256/Cargo.toml
 +++ b/frost-p256/Cargo.toml
 @@ -1,6 +1,7 @@
@@ -414,16 +414,16 @@ index dc5e3ed..1823e68 100644
  version.workspace = true
  authors.workspace = true
  readme = "README.md"
-@@ -35,11 +36,7 @@ rand_chacha.workspace = true
+@@ -35,11 +36,8 @@ rand_chacha.workspace = true
  serde_json.workspace = true
  
  [features]
 -nightly = []
 -default = ["serialization", "cheater-detection", "std"]
--#! ## Features
++default = ["serialization", "cheater-detection"]
+ #! ## Features
 -## Enable standard library support.
 -std = ["frost-core/std"]
-+default = ["serialization", "cheater-detection"]
  ## Enable `serde` support for types that need to be communicated. You
  ## can use `serde` to serialize structs with any encoder that supports
  ## `serde` (e.g. JSON with `serde_json`).
@@ -438,7 +438,7 @@ index 35c2620..b21cb8d 100644
  #![deny(missing_docs)]
  #![cfg_attr(docsrs, feature(doc_auto_cfg))]
 diff --git a/frost-rerandomized/Cargo.toml b/frost-rerandomized/Cargo.toml
-index 878f710..6a64529 100644
+index 878f710..c628b06 100644
 --- a/frost-rerandomized/Cargo.toml
 +++ b/frost-rerandomized/Cargo.toml
 @@ -1,6 +1,7 @@
@@ -449,13 +449,13 @@ index 878f710..6a64529 100644
  version.workspace = true
  authors.workspace = true
  readme = "README.md"
-@@ -26,11 +27,7 @@ rand_core.workspace = true
+@@ -26,11 +27,8 @@ rand_core.workspace = true
  [dev-dependencies]
  
  [features]
 -nightly = []
  default = ["serialization", "cheater-detection"]
--#! ## Features
+ #! ## Features
 -## Enable standard library support.
 -std = ["frost-core/std"]
  ## Enable `serde` support for types that need to be communicated. You
@@ -475,7 +475,7 @@ index a309d6f..78ee354 100644
  
  extern crate alloc;
 diff --git a/frost-ristretto255/Cargo.toml b/frost-ristretto255/Cargo.toml
-index ff67d89..b1f35ee 100644
+index ff67d89..79285a8 100644
 --- a/frost-ristretto255/Cargo.toml
 +++ b/frost-ristretto255/Cargo.toml
 @@ -1,6 +1,7 @@
@@ -486,16 +486,16 @@ index ff67d89..b1f35ee 100644
  version.workspace = true
  authors.workspace = true
  readme = "README.md"
-@@ -36,11 +37,7 @@ rand_chacha.workspace = true
+@@ -36,11 +37,8 @@ rand_chacha.workspace = true
  serde_json.workspace = true
  
  [features]
 -nightly = []
 -default = ["serialization", "cheater-detection", "std"]
--#! ## Features
++default = ["serialization", "cheater-detection"]
+ #! ## Features
 -## Enable standard library support.
 -std = ["frost-core/std"]
-+default = ["serialization", "cheater-detection"]
  ## Enable `serde` support for types that need to be communicated. You
  ## can use `serde` to serialize structs with any encoder that supports
  ## `serde` (e.g. JSON with `serde_json`).
@@ -510,7 +510,7 @@ index 0929c22..cd376b6 100644
  #![deny(missing_docs)]
  #![doc = include_str!("../README.md")]
 diff --git a/frost-secp256k1-evm/Cargo.toml b/frost-secp256k1-evm/Cargo.toml
-index cfa56ad..62b4c0f 100644
+index cfa56ad..57c5044 100644
 --- a/frost-secp256k1-evm/Cargo.toml
 +++ b/frost-secp256k1-evm/Cargo.toml
 @@ -1,6 +1,7 @@
@@ -521,16 +521,16 @@ index cfa56ad..62b4c0f 100644
  version.workspace = true
  authors.workspace = true
  readme = "README.md"
-@@ -35,11 +36,7 @@ rand_chacha.workspace = true
+@@ -35,11 +36,8 @@ rand_chacha.workspace = true
  serde_json.workspace = true
  
  [features]
 -nightly = []
 -default = ["serialization", "cheater-detection", "std"]
--#! ## Features
++default = ["serialization", "cheater-detection"]
+ #! ## Features
 -## Enable standard library support.
 -std = ["frost-core/std"]
-+default = ["serialization", "cheater-detection"]
  ## Enable `serde` support for types that need to be communicated. You
  ## can use `serde` to serialize structs with any encoder that supports
  ## `serde` (e.g. JSON with `serde_json`).
@@ -545,7 +545,7 @@ index a96ffaa..581c6f7 100644
  #![deny(missing_docs)]
  #![cfg_attr(docsrs, feature(doc_auto_cfg))]
 diff --git a/frost-secp256k1-tr/Cargo.toml b/frost-secp256k1-tr/Cargo.toml
-index 3a2292c..4e590e4 100644
+index 3a2292c..387d9d6 100644
 --- a/frost-secp256k1-tr/Cargo.toml
 +++ b/frost-secp256k1-tr/Cargo.toml
 @@ -1,6 +1,7 @@
@@ -556,16 +556,16 @@ index 3a2292c..4e590e4 100644
  version.workspace = true
  authors.workspace = true
  readme = "README.md"
-@@ -36,11 +37,7 @@ secp256k1 = "0.30.0"
+@@ -36,11 +37,8 @@ secp256k1 = "0.30.0"
  serde_json.workspace = true
  
  [features]
 -nightly = []
 -default = ["serialization", "cheater-detection", "std"]
--#! ## Features
++default = ["serialization", "cheater-detection"]
+ #! ## Features
 -## Enable standard library support.
 -std = ["frost-core/std"]
-+default = ["serialization", "cheater-detection"]
  ## Enable `serde` support for types that need to be communicated. You
  ## can use `serde` to serialize structs with any encoder that supports
  ## `serde` (e.g. JSON with `serde_json`).
@@ -580,7 +580,7 @@ index f566f72..591b2e4 100644
  #![deny(missing_docs)]
  #![cfg_attr(docsrs, feature(doc_auto_cfg))]
 diff --git a/frost-secp256k1/Cargo.toml b/frost-secp256k1/Cargo.toml
-index 4a6ac8e..0277875 100644
+index 4a6ac8e..4b14d4e 100644
 --- a/frost-secp256k1/Cargo.toml
 +++ b/frost-secp256k1/Cargo.toml
 @@ -1,6 +1,7 @@
@@ -591,16 +591,16 @@ index 4a6ac8e..0277875 100644
  version.workspace = true
  authors.workspace = true
  readme = "README.md"
-@@ -35,11 +36,7 @@ rand_chacha.workspace = true
+@@ -35,11 +36,8 @@ rand_chacha.workspace = true
  serde_json.workspace = true
  
  [features]
 -nightly = []
 -default = ["serialization", "cheater-detection", "std"]
--#! ## Features
++default = ["serialization", "cheater-detection"]
+ #! ## Features
 -## Enable standard library support.
 -std = ["frost-core/std"]
-+default = ["serialization", "cheater-detection"]
  ## Enable `serde` support for types that need to be communicated. You
  ## can use `serde` to serialize structs with any encoder that supports
  ## `serde` (e.g. JSON with `serde_json`).
