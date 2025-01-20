@@ -34,3 +34,6 @@ git commit --amend --no-edit --date "$COMMIT_DATE"
 
 git am ../0006-chore-relax-validate_num_of_signers-restrictions.patch
 git commit --amend --no-edit --date "$COMMIT_DATE"
+
+git am ../0007-feat-add-support-for-parity-scale-codec-and-scale-info.patch
+git commit --amend --no-edit --date "$COMMIT_DATE"
