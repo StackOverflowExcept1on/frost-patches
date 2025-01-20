@@ -1,0 +1,918 @@
+From 146c79a9b3eb34e675820dae9d0a5f7097470ae1 Mon Sep 17 00:00:00 2001
+From: StackOverflowExcept1on
+ <109800286+StackOverflowExcept1on@users.noreply.github.com>
+Date: Fri, 29 Aug 2025 19:54:33 +0300
+Subject: [PATCH] feat: add support for parity-scale-codec and scale-info
+
+---
+ .github/workflows/main.yml      |   6 +-
+ frost-core/Cargo.toml           |   8 +-
+ frost-core/src/identifier.rs    |  54 +++++++++++++
+ frost-core/src/keys.rs          | 130 ++++++++++++++++++++++++++++++++
+ frost-core/src/keys/dkg.rs      | 108 ++++++++++++++++++++++++++
+ frost-core/src/lib.rs           |  56 ++++++++++++++
+ frost-core/src/round1.rs        |  56 ++++++++++++++
+ frost-core/src/round2.rs        |  54 +++++++++++++
+ frost-core/src/signature.rs     |  56 ++++++++++++++
+ frost-core/src/traits.rs        |  12 +++
+ frost-core/src/verifying_key.rs |  58 ++++++++++++++
+ frost-ed25519/Cargo.toml        |   7 +-
+ frost-ed448/Cargo.toml          |   7 +-
+ frost-p256/Cargo.toml           |   7 +-
+ frost-rerandomized/Cargo.toml   |   7 +-
+ frost-ristretto255/Cargo.toml   |   7 +-
+ frost-secp256k1-evm/Cargo.toml  |   7 +-
+ frost-secp256k1-tr/Cargo.toml   |   7 +-
+ frost-secp256k1/Cargo.toml      |   7 +-
+ 19 files changed, 634 insertions(+), 20 deletions(-)
+
+diff --git a/.github/workflows/main.yml b/.github/workflows/main.yml
+index a19de2e..5203701 100644
+--- a/.github/workflows/main.yml
++++ b/.github/workflows/main.yml
+@@ -68,9 +68,9 @@ jobs:
+     - uses: dtolnay/rust-toolchain@master
+       with:
+         toolchain: stable
+-        targets: thumbv6m-none-eabi
+-    - run: cargo build -p frost-${{ matrix.crate }} --no-default-features --target thumbv6m-none-eabi
+-    - run: cargo build -p frost-${{ matrix.crate }} --no-default-features --features serialization --target thumbv6m-none-eabi
++        targets: wasm32v1-none
++    - run: cargo build -p frost-${{ matrix.crate }} --no-default-features --target wasm32v1-none
++    - run: cargo build -p frost-${{ matrix.crate }} --no-default-features --features serialization --target wasm32v1-none
+ 
+   test_beta:
+     name: test on beta
+diff --git a/frost-core/Cargo.toml b/frost-core/Cargo.toml
+index 64d6088..b23de6f 100644
+--- a/frost-core/Cargo.toml
++++ b/frost-core/Cargo.toml
+@@ -22,6 +22,8 @@ document-features.workspace = true
+ debugless-unwrap = "0.0.4"
+ derive-getters = "0.5.0"
+ hex.workspace = true
++parity-scale-codec = { version = "3.7.5", default-features = false, optional = true }
++scale-info = { version = "2.11", default-features = false, optional = true }
+ postcard = { version = "1.0.0", features = ["alloc"], optional = true }
+ rand_core = { version = "0.6", default-features = false }
+ serde = { version = "1.0.160", default-features = false, features = ["derive"], optional = true }
+@@ -57,7 +59,11 @@ internals = []
+ ## can use `serde` to serialize structs with any encoder that supports
+ ## `serde` (e.g. JSON with `serde_json`).
+ serde = ["dep:serde", "dep:serdect"]
+-serialization = ["serde", "dep:postcard"]
++## Enable `parity-scale-codec` and `scale-info` support for types
++## that need to be communicated.
++codec = ["dep:parity-scale-codec", "dep:scale-info"]
++## Enable a default serialization format. Enables `serde` and `codec`.
++serialization = ["serde", "codec", "dep:postcard"]
+ # Exposes ciphersuite-generic tests for other crates to use
+ test-impl = ["dep:proptest", "dep:serde_json", "dep:criterion"]
+ # Enable cheater detection
+diff --git a/frost-core/src/identifier.rs b/frost-core/src/identifier.rs
+index 9dc4e8f..b02e281 100644
+--- a/frost-core/src/identifier.rs
++++ b/frost-core/src/identifier.rs
+@@ -95,6 +95,60 @@ where
+     }
+ }
+ 
++#[cfg(feature = "codec")]
++impl<C> parity_scale_codec::Encode for Identifier<C>
++where
++    C: Ciphersuite,
++{
++    fn encode(&self) -> Vec<u8> {
++        let tmp = self.serialize();
++        let compact_len = parity_scale_codec::Compact(tmp.len() as u32);
++
++        let mut output = Vec::with_capacity(compact_len.size_hint() + tmp.len());
++
++        compact_len.encode_to(&mut output);
++        output.extend(tmp);
++
++        output
++    }
++}
++
++#[cfg(feature = "codec")]
++impl<C> parity_scale_codec::Decode for Identifier<C>
++where
++    C: Ciphersuite,
++{
++    fn decode<I: parity_scale_codec::Input>(
++        input: &mut I,
++    ) -> Result<Self, parity_scale_codec::Error> {
++        let input: Vec<u8> = parity_scale_codec::Decode::decode(input)?;
++        Self::deserialize(&input).map_err(|_| "Could not decode `Identifier<C>`".into())
++    }
++}
++
++#[cfg(feature = "codec")]
++impl<C> scale_info::TypeInfo for Identifier<C>
++where
++    C: Ciphersuite,
++{
++    type Identity = Self;
++
++    fn type_info() -> scale_info::Type {
++        scale_info::Type::builder()
++            .path(scale_info::Path::new_with_replace(
++                "Identifier",
++                module_path!(),
++                &[],
++            ))
++            .type_params(scale_info::prelude::vec![])
++            .docs(&["A FROST participant identifier."])
++            .composite(
++                scale_info::build::Fields::unnamed()
++                    .field(|f| f.ty::<Vec<u8>>().type_name("Vec<u8>")),
++            )
++    }
++}
++
+ impl<C> Eq for Identifier<C> where C: Ciphersuite {}
+ 
+ impl<C> Debug for Identifier<C>
+diff --git a/frost-core/src/keys.rs b/frost-core/src/keys.rs
+index 6ae1c5a..91a1cc0 100644
+--- a/frost-core/src/keys.rs
++++ b/frost-core/src/keys.rs
+@@ -381,6 +381,80 @@ where
+     }
+ }
+ 
++#[cfg(feature = "codec")]
++impl<C> parity_scale_codec::Encode for VerifiableSecretSharingCommitment<C>
++where
++    C: Ciphersuite,
++{
++    fn encode(&self) -> Vec<u8> {
++        let tmp = self
++            .serialize()
++            .expect("Could not serialize `VerifiableSecretSharingCommitment<C>`")
++            .concat();
++        let compact_len = parity_scale_codec::Compact(tmp.len() as u32);
++
++        let mut output = Vec::with_capacity(compact_len.size_hint() + tmp.len());
++
++        compact_len.encode_to(&mut output);
++        output.extend(tmp);
++
++        output
++    }
++}
++
++#[cfg(feature = "codec")]
++impl<C> parity_scale_codec::Decode for VerifiableSecretSharingCommitment<C>
++where
++    C: Ciphersuite,
++{
++    fn decode<I: parity_scale_codec::Input>(
++        input: &mut I,
++    ) -> Result<Self, parity_scale_codec::Error> {
++        let input: Vec<u8> = parity_scale_codec::Decode::decode(input)?;
++
++        let generator = <C::Group>::generator();
++        let serialization =
++            <C::Group>::serialize(&generator).expect("serializing the generator always works");
++        let serialization_len = serialization.as_ref().len();
++
++        const ERROR_MSG: &str = "Could not decode `VerifiableSecretSharingCommitment<C>`";
++
++        let chunks_exact = input.chunks_exact(serialization_len);
++
++        if !chunks_exact.remainder().is_empty() {
++            return Err(ERROR_MSG.into());
++        }
++
++        let serialized_coefficient_commitments: Vec<Vec<u8>> =
++            chunks_exact.map(Vec::from).collect();
++
++        Self::deserialize(serialized_coefficient_commitments).map_err(|_| ERROR_MSG.into())
++    }
++}
++
++#[cfg(feature = "codec")]
++impl<C> scale_info::TypeInfo for VerifiableSecretSharingCommitment<C>
++where
++    C: Ciphersuite,
++{
++    type Identity = Self;
++
++    fn type_info() -> scale_info::Type {
++        scale_info::Type::builder()
++            .path(scale_info::Path::new_with_replace(
++                "VerifiableSecretSharingCommitment",
++                module_path!(),
++                &[],
++            ))
++            .type_params(scale_info::prelude::vec![])
++            .docs(&["Contains the commitments to the coefficients for our secret polynomial _f_, used to generate participants' key shares."])
++            .composite(
++                scale_info::build::Fields::unnamed()
++                    .field(|f| f.ty::<Vec<u8>>().type_name("Vec<u8>")),
++            )
++    }
++}
++
+ /// A secret share generated by performing a (t-out-of-n) secret sharing scheme,
+ /// generated by a dealer performing [`generate_with_dealer`].
+ ///
+@@ -793,6 +867,62 @@ where
+     }
+ }
+ 
++#[cfg(all(feature = "serialization", feature = "codec"))]
++impl<C> parity_scale_codec::Encode for PublicKeyPackage<C>
++where
++    C: Ciphersuite,
++{
++    fn encode(&self) -> Vec<u8> {
++        let tmp = self
++            .serialize()
++            .expect("Could not serialize `PublicKeyPackage<C>`");
++        let compact_len = parity_scale_codec::Compact(tmp.len() as u32);
++
++        let mut output = Vec::with_capacity(compact_len.size_hint() + tmp.len());
++
++        compact_len.encode_to(&mut output);
++        output.extend(tmp);
++
++        output
++    }
++}
++
++#[cfg(all(feature = "serialization", feature = "codec"))]
++impl<C> parity_scale_codec::Decode for PublicKeyPackage<C>
++where
++    C: Ciphersuite,
++{
++    fn decode<I: parity_scale_codec::Input>(
++        input: &mut I,
++    ) -> Result<Self, parity_scale_codec::Error> {
++        let input: Vec<u8> = parity_scale_codec::Decode::decode(input)?;
++        Self::deserialize(&input).map_err(|_| "Could not decode `SigningPackage<C>`".into())
++    }
++}
++
++#[cfg(all(feature = "serialization", feature = "codec"))]
++impl<C> scale_info::TypeInfo for PublicKeyPackage<C>
++where
++    C: Ciphersuite,
++{
++    type Identity = Self;
++
++    fn type_info() -> scale_info::Type {
++        scale_info::Type::builder()
++            .path(scale_info::Path::new_with_replace(
++                "PublicKeyPackage",
++                module_path!(),
++                &[],
++            ))
++            .type_params(scale_info::prelude::vec![])
++            .docs(&["Public data that contains all the signers' verifying shares as well as the group verifying key."])
++            .composite(
++                scale_info::build::Fields::unnamed()
++                    .field(|f| f.ty::<Vec<u8>>().type_name("Vec<u8>")),
++            )
++    }
++}
++
+ /// Validates the number of signers.
+ #[cfg_attr(feature = "internals", visibility::make(pub))]
+ fn validate_num_of_signers<C: Ciphersuite>(
+diff --git a/frost-core/src/keys/dkg.rs b/frost-core/src/keys/dkg.rs
+index 0eac153..0c4fe97 100644
+--- a/frost-core/src/keys/dkg.rs
++++ b/frost-core/src/keys/dkg.rs
+@@ -111,6 +111,60 @@ pub mod round1 {
+         }
+     }
+ 
++    #[cfg(all(feature = "serialization", feature = "codec"))]
++    impl<C> parity_scale_codec::Encode for Package<C>
++    where
++        C: Ciphersuite,
++    {
++        fn encode(&self) -> Vec<u8> {
++            let tmp = self.serialize().expect("Could not serialize `Package<C>`");
++            let compact_len = parity_scale_codec::Compact(tmp.len() as u32);
++
++            let mut output = Vec::with_capacity(compact_len.size_hint() + tmp.len());
++
++            compact_len.encode_to(&mut output);
++            output.extend(tmp);
++
++            output
++        }
++    }
++
++    #[cfg(all(feature = "serialization", feature = "codec"))]
++    impl<C> parity_scale_codec::Decode for Package<C>
++    where
++        C: Ciphersuite,
++    {
++        fn decode<I: parity_scale_codec::Input>(
++            input: &mut I,
++        ) -> Result<Self, parity_scale_codec::Error> {
++            let input: Vec<u8> = parity_scale_codec::Decode::decode(input)?;
++            Self::deserialize(&input).map_err(|_| "Could not decode `Package<C>`".into())
++        }
++    }
++
++    #[cfg(all(feature = "serialization", feature = "codec"))]
++    impl<C> scale_info::TypeInfo for Package<C>
++    where
++        C: Ciphersuite,
++    {
++        type Identity = Self;
++
++        fn type_info() -> scale_info::Type {
++            scale_info::Type::builder()
++                .path(scale_info::Path::new_with_replace(
++                    "Package",
++                    module_path!(),
++                    &[],
++                ))
++                .type_params(scale_info::prelude::vec![])
++                .docs(&["The package that must be broadcast by each participant to all other participants between the first and second parts of the DKG protocol (round 1)."])
++                .composite(
++                    scale_info::build::Fields::unnamed()
++                        .field(|f| f.ty::<Vec<u8>>().type_name("Vec<u8>")),
++                )
++        }
++    }
++
+     /// The secret package that must be kept in memory by the participant
+     /// between the first and second parts of the DKG protocol (round 1).
+     ///
+@@ -269,6 +323,60 @@ pub mod round2 {
+         }
+     }
+ 
++    #[cfg(all(feature = "serialization", feature = "codec"))]
++    impl<C> parity_scale_codec::Encode for Package<C>
++    where
++        C: Ciphersuite,
++    {
++        fn encode(&self) -> Vec<u8> {
++            let tmp = self.serialize().expect("Could not serialize `Package<C>`");
++            let compact_len = parity_scale_codec::Compact(tmp.len() as u32);
++
++            let mut output = Vec::with_capacity(compact_len.size_hint() + tmp.len());
++
++            compact_len.encode_to(&mut output);
++            output.extend(tmp);
++
++            output
++        }
++    }
++
++    #[cfg(all(feature = "serialization", feature = "codec"))]
++    impl<C> parity_scale_codec::Decode for Package<C>
++    where
++        C: Ciphersuite,
++    {
++        fn decode<I: parity_scale_codec::Input>(
++            input: &mut I,
++        ) -> Result<Self, parity_scale_codec::Error> {
++            let input: Vec<u8> = parity_scale_codec::Decode::decode(input)?;
++            Self::deserialize(&input).map_err(|_| "Could not decode `Package<C>`".into())
++        }
++    }
++
++    #[cfg(all(feature = "serialization", feature = "codec"))]
++    impl<C> scale_info::TypeInfo for Package<C>
++    where
++        C: Ciphersuite,
++    {
++        type Identity = Self;
++
++        fn type_info() -> scale_info::Type {
++            scale_info::Type::builder()
++                .path(scale_info::Path::new_with_replace(
++                    "Package",
++                    module_path!(),
++                    &[],
++                ))
++                .type_params(scale_info::prelude::vec![])
++                .docs(&["A package that must be sent by each participant to some other participants in Round 2 of the DKG protocol. Note that there is one specific package for each specific recipient, in contrast to Round 1."])
++                .composite(
++                    scale_info::build::Fields::unnamed()
++                        .field(|f| f.ty::<Vec<u8>>().type_name("Vec<u8>")),
++                )
++        }
++    }
++
+     /// The secret package that must be kept in memory by the participant
+     /// between the second and third parts of the DKG protocol (round 2).
+     ///
+diff --git a/frost-core/src/lib.rs b/frost-core/src/lib.rs
+index bcaa2aa..86c1d1d 100644
+--- a/frost-core/src/lib.rs
++++ b/frost-core/src/lib.rs
+@@ -464,6 +464,62 @@ where
+     }
+ }
+ 
++#[cfg(all(feature = "serialization", feature = "codec"))]
++impl<C> parity_scale_codec::Encode for SigningPackage<C>
++where
++    C: Ciphersuite,
++{
++    fn encode(&self) -> Vec<u8> {
++        let tmp = self
++            .serialize()
++            .expect("Could not serialize `SigningPackage<C>`");
++        let compact_len = parity_scale_codec::Compact(tmp.len() as u32);
++
++        let mut output = Vec::with_capacity(compact_len.size_hint() + tmp.len());
++
++        compact_len.encode_to(&mut output);
++        output.extend(tmp);
++
++        output
++    }
++}
++
++#[cfg(all(feature = "serialization", feature = "codec"))]
++impl<C> parity_scale_codec::Decode for SigningPackage<C>
++where
++    C: Ciphersuite,
++{
++    fn decode<I: parity_scale_codec::Input>(
++        input: &mut I,
++    ) -> Result<Self, parity_scale_codec::Error> {
++        let input: Vec<u8> = parity_scale_codec::Decode::decode(input)?;
++        Self::deserialize(&input).map_err(|_| "Could not decode `SigningPackage<C>`".into())
++    }
++}
++
++#[cfg(all(feature = "serialization", feature = "codec"))]
++impl<C> scale_info::TypeInfo for SigningPackage<C>
++where
++    C: Ciphersuite,
++{
++    type Identity = Self;
++
++    fn type_info() -> scale_info::Type {
++        scale_info::Type::builder()
++            .path(scale_info::Path::new_with_replace(
++                "SigningPackage",
++                module_path!(),
++                &[],
++            ))
++            .type_params(scale_info::prelude::vec![])
++            .docs(&["Generated by the coordinator of the signing operation and distributed to each signing party."])
++            .composite(
++                scale_info::build::Fields::unnamed()
++                    .field(|f| f.ty::<Vec<u8>>().type_name("Vec<u8>")),
++            )
++    }
++}
++
+ /// The product of all signers' individual commitments, published as part of the
+ /// final signature.
+ #[derive(Clone, PartialEq, Eq)]
+diff --git a/frost-core/src/round1.rs b/frost-core/src/round1.rs
+index 88cdeac..63b1e96 100644
+--- a/frost-core/src/round1.rs
++++ b/frost-core/src/round1.rs
+@@ -349,6 +349,62 @@ where
+     }
+ }
+ 
++#[cfg(all(feature = "serialization", feature = "codec"))]
++impl<C> parity_scale_codec::Encode for SigningCommitments<C>
++where
++    C: Ciphersuite,
++{
++    fn encode(&self) -> Vec<u8> {
++        let tmp = self
++            .serialize()
++            .expect("Could not serialize `SigningCommitments<C>`");
++        let compact_len = parity_scale_codec::Compact(tmp.len() as u32);
++
++        let mut output = Vec::with_capacity(compact_len.size_hint() + tmp.len());
++
++        compact_len.encode_to(&mut output);
++        output.extend(tmp);
++
++        output
++    }
++}
++
++#[cfg(all(feature = "serialization", feature = "codec"))]
++impl<C> parity_scale_codec::Decode for SigningCommitments<C>
++where
++    C: Ciphersuite,
++{
++    fn decode<I: parity_scale_codec::Input>(
++        input: &mut I,
++    ) -> Result<Self, parity_scale_codec::Error> {
++        let input: Vec<u8> = parity_scale_codec::Decode::decode(input)?;
++        Self::deserialize(&input).map_err(|_| "Could not decode `SigningCommitments<C>`".into())
++    }
++}
++
++#[cfg(all(feature = "serialization", feature = "codec"))]
++impl<C> scale_info::TypeInfo for SigningCommitments<C>
++where
++    C: Ciphersuite,
++{
++    type Identity = Self;
++
++    fn type_info() -> scale_info::Type {
++        scale_info::Type::builder()
++            .path(scale_info::Path::new_with_replace(
++                "SigningCommitments",
++                module_path!(),
++                &[],
++            ))
++            .type_params(scale_info::prelude::vec![])
++            .docs(&["Published by each participant in the first round of the signing protocol."])
++            .composite(
++                scale_info::build::Fields::unnamed()
++                    .field(|f| f.ty::<Vec<u8>>().type_name("Vec<u8>")),
++            )
++    }
++}
++
+ impl<C> From<&SigningNonces<C>> for SigningCommitments<C>
+ where
+     C: Ciphersuite,
+diff --git a/frost-core/src/round2.rs b/frost-core/src/round2.rs
+index d3147db..b792488 100644
+--- a/frost-core/src/round2.rs
++++ b/frost-core/src/round2.rs
+@@ -82,6 +82,60 @@ where
+     }
+ }
+ 
++#[cfg(feature = "codec")]
++impl<C> parity_scale_codec::Encode for SignatureShare<C>
++where
++    C: Ciphersuite,
++{
++    fn encode(&self) -> Vec<u8> {
++        let tmp = self.serialize();
++        let compact_len = parity_scale_codec::Compact(tmp.len() as u32);
++
++        let mut output = Vec::with_capacity(compact_len.size_hint() + tmp.len());
++
++        compact_len.encode_to(&mut output);
++        output.extend(tmp);
++
++        output
++    }
++}
++
++#[cfg(feature = "codec")]
++impl<C> parity_scale_codec::Decode for SignatureShare<C>
++where
++    C: Ciphersuite,
++{
++    fn decode<I: parity_scale_codec::Input>(
++        input: &mut I,
++    ) -> Result<Self, parity_scale_codec::Error> {
++        let input: Vec<u8> = parity_scale_codec::Decode::decode(input)?;
++        Self::deserialize(&input).map_err(|_| "Could not decode `SignatureShare<C>`".into())
++    }
++}
++
++#[cfg(feature = "codec")]
++impl<C> scale_info::TypeInfo for SignatureShare<C>
++where
++    C: Ciphersuite,
++{
++    type Identity = Self;
++
++    fn type_info() -> scale_info::Type {
++        scale_info::Type::builder()
++            .path(scale_info::Path::new_with_replace(
++                "SignatureShare",
++                module_path!(),
++                &[],
++            ))
++            .type_params(scale_info::prelude::vec![])
++            .docs(&["A participant's signature share, which the coordinator will aggregate with all other signer's shares into the joint signature."])
++            .composite(
++                scale_info::build::Fields::unnamed()
++                    .field(|f| f.ty::<Vec<u8>>().type_name("Vec<u8>")),
++            )
++    }
++}
++
+ impl<C> Debug for SignatureShare<C>
+ where
+     C: Ciphersuite,
+diff --git a/frost-core/src/signature.rs b/frost-core/src/signature.rs
+index 02ccaac..8309ca5 100644
+--- a/frost-core/src/signature.rs
++++ b/frost-core/src/signature.rs
+@@ -130,6 +130,62 @@ where
+     }
+ }
+ 
++#[cfg(feature = "codec")]
++impl<C> parity_scale_codec::Encode for Signature<C>
++where
++    C: Ciphersuite,
++{
++    fn encode(&self) -> Vec<u8> {
++        let tmp = self
++            .serialize()
++            .expect("Could not serialize `Signature<C>`");
++        let compact_len = parity_scale_codec::Compact(tmp.len() as u32);
++
++        let mut output = Vec::with_capacity(compact_len.size_hint() + tmp.len());
++
++        compact_len.encode_to(&mut output);
++        output.extend(tmp);
++
++        output
++    }
++}
++
++#[cfg(feature = "codec")]
++impl<C> parity_scale_codec::Decode for Signature<C>
++where
++    C: Ciphersuite,
++{
++    fn decode<I: parity_scale_codec::Input>(
++        input: &mut I,
++    ) -> Result<Self, parity_scale_codec::Error> {
++        let input: Vec<u8> = parity_scale_codec::Decode::decode(input)?;
++        Self::deserialize(&input).map_err(|_| "Could not decode `Signature<C>`".into())
++    }
++}
++
++#[cfg(feature = "codec")]
++impl<C> scale_info::TypeInfo for Signature<C>
++where
++    C: Ciphersuite,
++{
++    type Identity = Self;
++
++    fn type_info() -> scale_info::Type {
++        scale_info::Type::builder()
++            .path(scale_info::Path::new_with_replace(
++                "Signature",
++                module_path!(),
++                &[],
++            ))
++            .type_params(scale_info::prelude::vec![])
++            .docs(&["A Schnorr signature over some prime order group (or subgroup)."])
++            .composite(
++                scale_info::build::Fields::unnamed()
++                    .field(|f| f.ty::<Vec<u8>>().type_name("Vec<u8>")),
++            )
++    }
++}
++
+ impl<C: Ciphersuite> core::fmt::Debug for Signature<C> {
+     fn fmt(&self, f: &mut core::fmt::Formatter) -> core::fmt::Result {
+         f.debug_struct("Signature")
+diff --git a/frost-core/src/traits.rs b/frost-core/src/traits.rs
+index c65d7d0..3abaf83 100644
+--- a/frost-core/src/traits.rs
++++ b/frost-core/src/traits.rs
+@@ -37,8 +37,20 @@ pub trait Field: Copy {
+         + Sub<Output = Self::Scalar>;
+ 
+     /// A unique byte array buf of fixed length N.
++    #[cfg(not(feature = "codec"))]
+     type Serialization: Clone + AsRef<[u8]> + AsMut<[u8]> + for<'a> TryFrom<&'a [u8]> + Debug;
+ 
++    /// A unique byte array buf of fixed length N.
++    #[cfg(feature = "codec")]
++    type Serialization: Clone
++        + AsRef<[u8]>
++        + AsMut<[u8]>
++        + for<'a> TryFrom<&'a [u8]>
++        + Debug
++        + parity_scale_codec::Encode
++        + parity_scale_codec::Decode
++        + scale_info::TypeInfo;
++
+     /// Returns the zero element of the field, the additive identity.
+     fn zero() -> Self::Scalar;
+ 
+diff --git a/frost-core/src/verifying_key.rs b/frost-core/src/verifying_key.rs
+index 24f0540..b2f83bb 100644
+--- a/frost-core/src/verifying_key.rs
++++ b/frost-core/src/verifying_key.rs
+@@ -93,6 +93,64 @@ where
+     }
+ }
+ 
++#[cfg(feature = "codec")]
++impl<C> parity_scale_codec::Encode for VerifyingKey<C>
++where
++    C: Ciphersuite,
++{
++    fn encode(&self) -> Vec<u8> {
++        let tmp = self
++            .serialize()
++            .expect("Could not serialize `VerifyingKey<C>`");
++        let compact_len = parity_scale_codec::Compact(tmp.len() as u32);
++
++        let mut output = Vec::with_capacity(compact_len.size_hint() + tmp.len());
++
++        compact_len.encode_to(&mut output);
++        output.extend(tmp);
++
++        output
++    }
++}
++
++#[cfg(feature = "codec")]
++impl<C> parity_scale_codec::Decode for VerifyingKey<C>
++where
++    C: Ciphersuite,
++{
++    fn decode<I: parity_scale_codec::Input>(
++        input: &mut I,
++    ) -> Result<Self, parity_scale_codec::Error> {
++        let input: Vec<u8> = parity_scale_codec::Decode::decode(input)?;
++        Self::deserialize(&input).map_err(|_| "Could not decode `VerifyingKey<C>`".into())
++    }
++}
++
++#[cfg(feature = "codec")]
++impl<C> scale_info::TypeInfo for VerifyingKey<C>
++where
++    C: Ciphersuite,
++{
++    type Identity = Self;
++
++    fn type_info() -> scale_info::Type {
++        scale_info::Type::builder()
++            .path(scale_info::Path::new_with_replace(
++                "VerifyingKey",
++                module_path!(),
++                &[],
++            ))
++            .type_params(scale_info::prelude::vec![])
++            .docs(&[
++                "A valid verifying key for Schnorr signatures over a FROST [`Ciphersuite::Group`].",
++            ])
++            .composite(
++                scale_info::build::Fields::unnamed()
++                    .field(|f| f.ty::<Vec<u8>>().type_name("Vec<u8>")),
++            )
++    }
++}
++
+ impl<C> Debug for VerifyingKey<C>
+ where
+     C: Ciphersuite,
+diff --git a/frost-ed25519/Cargo.toml b/frost-ed25519/Cargo.toml
+index 0f86b61..2919ca7 100644
+--- a/frost-ed25519/Cargo.toml
++++ b/frost-ed25519/Cargo.toml
+@@ -45,8 +45,11 @@ std = []
+ ## can use `serde` to serialize structs with any encoder that supports
+ ## `serde` (e.g. JSON with `serde_json`).
+ serde = ["frost-core/serde"]
+-## Enable a default serialization format. Enables `serde`.
+-serialization = ["serde", "frost-core/serialization", "frost-rerandomized/serialization"]
++## Enable `parity-scale-codec` and `scale-info` support for types
++## that need to be communicated.
++codec = ["frost-core/codec"]
++## Enable a default serialization format. Enables `serde` and `codec`.
++serialization = ["serde", "codec", "frost-core/serialization", "frost-rerandomized/serialization"]
+ ## Enable cheater detection
+ cheater-detection = ["frost-core/cheater-detection", "frost-rerandomized/cheater-detection"]
+ 
+diff --git a/frost-ed448/Cargo.toml b/frost-ed448/Cargo.toml
+index 79bbc6e..4d4cf21 100644
+--- a/frost-ed448/Cargo.toml
++++ b/frost-ed448/Cargo.toml
+@@ -44,8 +44,11 @@ std = []
+ ## can use `serde` to serialize structs with any encoder that supports
+ ## `serde` (e.g. JSON with `serde_json`).
+ serde = ["frost-core/serde"]
+-## Enable a default serialization format. Enables `serde`.
+-serialization = ["serde", "frost-core/serialization", "frost-rerandomized/serialization"]
++## Enable `parity-scale-codec` and `scale-info` support for types
++## that need to be communicated.
++codec = ["frost-core/codec"]
++## Enable a default serialization format. Enables `serde` and `codec`.
++serialization = ["serde", "codec", "frost-core/serialization", "frost-rerandomized/serialization"]
+ ## Enable cheater detection
+ cheater-detection = ["frost-core/cheater-detection", "frost-rerandomized/cheater-detection"]
+ 
+diff --git a/frost-p256/Cargo.toml b/frost-p256/Cargo.toml
+index d047e7b..fc58af5 100644
+--- a/frost-p256/Cargo.toml
++++ b/frost-p256/Cargo.toml
+@@ -44,8 +44,11 @@ std = []
+ ## can use `serde` to serialize structs with any encoder that supports
+ ## `serde` (e.g. JSON with `serde_json`).
+ serde = ["frost-core/serde"]
+-## Enable a default serialization format. Enables `serde`.
+-serialization = ["serde", "frost-core/serialization", "frost-rerandomized/serialization"]
++## Enable `parity-scale-codec` and `scale-info` support for types
++## that need to be communicated.
++codec = ["frost-core/codec"]
++## Enable a default serialization format. Enables `serde` and `codec`.
++serialization = ["serde", "codec", "frost-core/serialization", "frost-rerandomized/serialization"]
+ ## Enable cheater detection
+ cheater-detection = ["frost-core/cheater-detection", "frost-rerandomized/cheater-detection"]
+ 
+diff --git a/frost-rerandomized/Cargo.toml b/frost-rerandomized/Cargo.toml
+index 6470cf9..5e35c7a 100644
+--- a/frost-rerandomized/Cargo.toml
++++ b/frost-rerandomized/Cargo.toml
+@@ -33,9 +33,12 @@ std = []
+ ## can use `serde` to serialize structs with any encoder that supports
+ ## `serde` (e.g. JSON with `serde_json`).
+ serde = ["frost-core/serde"]
++## Enable `parity-scale-codec` and `scale-info` support for types
++## that need to be communicated.
++codec = ["frost-core/codec"]
+ # Exposes ciphersuite-generic tests for other crates to use
+ test-impl = ["frost-core/test-impl", "serialization"]
+ ## Enable cheater detection
+ cheater-detection = ["frost-core/cheater-detection"]
+-## Enable a default serialization format. Enables `serde`.
+-serialization = ["serde", "frost-core/serialization"]
++## Enable a default serialization format. Enables `serde` and `codec`.
++serialization = ["serde", "codec", "frost-core/serialization"]
+diff --git a/frost-ristretto255/Cargo.toml b/frost-ristretto255/Cargo.toml
+index c9e6254..61b828a 100644
+--- a/frost-ristretto255/Cargo.toml
++++ b/frost-ristretto255/Cargo.toml
+@@ -45,8 +45,11 @@ std = []
+ ## can use `serde` to serialize structs with any encoder that supports
+ ## `serde` (e.g. JSON with `serde_json`).
+ serde = ["frost-core/serde", "curve25519-dalek/serde"]
+-## Enable a default serialization format. Enables `serde`.
+-serialization = ["serde", "frost-core/serialization", "frost-rerandomized/serialization"]
++## Enable `parity-scale-codec` and `scale-info` support for types
++## that need to be communicated.
++codec = ["frost-core/codec"]
++## Enable a default serialization format. Enables `serde` and `codec`.
++serialization = ["serde", "codec", "frost-core/serialization", "frost-rerandomized/serialization"]
+ ## Enable cheater detection
+ cheater-detection = ["frost-core/cheater-detection", "frost-rerandomized/cheater-detection"]
+ 
+diff --git a/frost-secp256k1-evm/Cargo.toml b/frost-secp256k1-evm/Cargo.toml
+index 1a58c54..924416b 100644
+--- a/frost-secp256k1-evm/Cargo.toml
++++ b/frost-secp256k1-evm/Cargo.toml
+@@ -44,8 +44,11 @@ std = []
+ ## can use `serde` to serialize structs with any encoder that supports
+ ## `serde` (e.g. JSON with `serde_json`).
+ serde = ["frost-core/serde"]
+-## Enable a default serialization format. Enables `serde`.
+-serialization = ["serde", "frost-core/serialization", "frost-rerandomized/serialization"]
++## Enable `parity-scale-codec` and `scale-info` support for types
++## that need to be communicated.
++codec = ["frost-core/codec"]
++## Enable a default serialization format. Enables `serde` and `codec`.
++serialization = ["serde", "codec", "frost-core/serialization", "frost-rerandomized/serialization"]
+ ## Enable cheater detection
+ cheater-detection = ["frost-core/cheater-detection", "frost-rerandomized/cheater-detection"]
+ 
+diff --git a/frost-secp256k1-tr/Cargo.toml b/frost-secp256k1-tr/Cargo.toml
+index c9227fb..4e99774 100644
+--- a/frost-secp256k1-tr/Cargo.toml
++++ b/frost-secp256k1-tr/Cargo.toml
+@@ -45,8 +45,11 @@ std = []
+ ## can use `serde` to serialize structs with any encoder that supports
+ ## `serde` (e.g. JSON with `serde_json`).
+ serde = ["frost-core/serde"]
+-## Enable a default serialization format. Enables `serde`.
+-serialization = ["serde", "frost-core/serialization", "frost-rerandomized/serialization"]
++## Enable `parity-scale-codec` and `scale-info` support for types
++## that need to be communicated.
++codec = ["frost-core/codec"]
++## Enable a default serialization format. Enables `serde` and `codec`.
++serialization = ["serde", "codec", "frost-core/serialization", "frost-rerandomized/serialization"]
+ ## Enable cheater detection
+ cheater-detection = ["frost-core/cheater-detection", "frost-rerandomized/cheater-detection"]
+ 
+diff --git a/frost-secp256k1/Cargo.toml b/frost-secp256k1/Cargo.toml
+index 30e20d5..f0a3d83 100644
+--- a/frost-secp256k1/Cargo.toml
++++ b/frost-secp256k1/Cargo.toml
+@@ -44,8 +44,11 @@ std = []
+ ## can use `serde` to serialize structs with any encoder that supports
+ ## `serde` (e.g. JSON with `serde_json`).
+ serde = ["frost-core/serde"]
+-## Enable a default serialization format. Enables `serde`.
+-serialization = ["serde", "frost-core/serialization", "frost-rerandomized/serialization"]
++## Enable `parity-scale-codec` and `scale-info` support for types
++## that need to be communicated.
++codec = ["frost-core/codec"]
++## Enable a default serialization format. Enables `serde` and `codec`.
++serialization = ["serde", "codec", "frost-core/serialization", "frost-rerandomized/serialization"]
+ ## Enable cheater detection
+ cheater-detection = ["frost-core/cheater-detection", "frost-rerandomized/cheater-detection"]
+ 
+-- 
+2.50.1
+
