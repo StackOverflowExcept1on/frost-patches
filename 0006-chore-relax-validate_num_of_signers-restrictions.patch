@@ -1,0 +1,32 @@
+From a78c97c643157a1e021a445c806db462e94812e8 Mon Sep 17 00:00:00 2001
+From: StackOverflowExcept1on
+ <109800286+StackOverflowExcept1on@users.noreply.github.com>
+Date: Wed, 22 Jan 2025 14:41:50 +0300
+Subject: [PATCH] chore: relax validate_num_of_signers restrictions
+
+---
+ frost-core/src/keys.rs | 8 --------
+ 1 file changed, 8 deletions(-)
+
+diff --git a/frost-core/src/keys.rs b/frost-core/src/keys.rs
+index d146115..7270131 100644
+--- a/frost-core/src/keys.rs
++++ b/frost-core/src/keys.rs
+@@ -773,14 +773,6 @@ fn validate_num_of_signers<C: Ciphersuite>(
+     min_signers: u16,
+     max_signers: u16,
+ ) -> Result<(), Error<C>> {
+-    if min_signers < 2 {
+-        return Err(Error::InvalidMinSigners);
+-    }
+-
+-    if max_signers < 2 {
+-        return Err(Error::InvalidMaxSigners);
+-    }
+-
+     if min_signers > max_signers {
+         return Err(Error::InvalidMinSigners);
+     }
+-- 
+2.34.1
+

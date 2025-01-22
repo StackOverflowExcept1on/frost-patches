@@ -31,3 +31,6 @@ git commit --amend --no-edit --date "$COMMIT_DATE"
 
 git am ../0005-chore-enable-CI-for-other-branches.patch
 git commit --amend --no-edit --date "$COMMIT_DATE"
+
+git am ../0006-chore-relax-validate_num_of_signers-restrictions.patch
+git commit --amend --no-edit --date "$COMMIT_DATE"
