@@ -1,7 +1,7 @@
-From e19d30ad55de6e914f17180b7bbc0e1d3945ffb7 Mon Sep 17 00:00:00 2001
+From ffde84aa5ba0a0473e91cd32ab93e18fa0afefea Mon Sep 17 00:00:00 2001
 From: StackOverflowExcept1on
  <109800286+StackOverflowExcept1on@users.noreply.github.com>
-Date: Fri, 17 Jan 2025 15:24:16 +0300
+Date: Tue, 4 Feb 2025 18:46:18 +0300
 Subject: [PATCH] feat: bump MSRV to 1.81, make all crates no_std
 
 ---
@@ -32,7 +32,7 @@ Subject: [PATCH] feat: bump MSRV to 1.81, make all crates no_std
  24 files changed, 57 insertions(+), 98 deletions(-)
 
 diff --git a/.github/workflows/main.yml b/.github/workflows/main.yml
-index 3a3721e..2aa5165 100644
+index 663f4fe..3889cf1 100644
 --- a/.github/workflows/main.yml
 +++ b/.github/workflows/main.yml
 @@ -25,7 +25,7 @@ jobs:
@@ -145,7 +145,7 @@ index 78662df..c32fb0c 100644
  #[derive(Error, Debug, Clone, Copy, Eq, PartialEq)]
  pub struct ParticipantError<C: Ciphersuite>(Identifier<C>);
 diff --git a/frost-core/src/lib.rs b/frost-core/src/lib.rs
-index 76078d9..7a36e62 100644
+index a290984..a0e232b 100644
 --- a/frost-core/src/lib.rs
 +++ b/frost-core/src/lib.rs
 @@ -1,4 +1,4 @@
@@ -232,7 +232,7 @@ index 9c4bce8..334922d 100644
  #![deny(missing_docs)]
  #![cfg_attr(docsrs, feature(doc_auto_cfg))]
 diff --git a/frost-ed448/Cargo.toml b/frost-ed448/Cargo.toml
-index 16282a9..6c1034d 100644
+index 16282a9..ef0cbef 100644
 --- a/frost-ed448/Cargo.toml
 +++ b/frost-ed448/Cargo.toml
 @@ -1,6 +1,7 @@
@@ -248,7 +248,7 @@ index 16282a9..6c1034d 100644
  [dependencies]
  document-features.workspace = true
 -ed448-goldilocks = { version = "0.9.0" }
-+ed448-goldilocks-plus = { version = "0.13.3", features = ["zeroize"], default-features = false }
++ed448-goldilocks-plus = { version = "0.15", features = ["zeroize"], default-features = false }
  frost-core = { path = "../frost-core", version = "2.1.0", default-features = false }
  frost-rerandomized = { path = "../frost-rerandomized", version = "2.1.0", default-features = false }
  rand_core.workspace = true
