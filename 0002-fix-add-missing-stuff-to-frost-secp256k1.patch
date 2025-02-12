@@ -1,4 +1,4 @@
-From 31ef23b4167c3fe79f3587aabf85d3e2807de2b6 Mon Sep 17 00:00:00 2001
+From c1d56da817c1dfa6b5ac70f395321a080fee530d Mon Sep 17 00:00:00 2001
 From: StackOverflowExcept1on
  <109800286+StackOverflowExcept1on@users.noreply.github.com>
 Date: Sat, 4 Jan 2025 14:17:22 +0300
@@ -8,18 +8,18 @@ Subject: [PATCH] fix: add missing stuff to frost-secp256k1
  .github/workflows/main.yml           |  2 +-
  Cargo.toml                           |  1 +
  README.md                            |  1 +
- book/src/dev/release-checklist.md    | 16 +++++++++-------
+ book/src/dev/release-checklist.md    |  7 ++++---
  book/src/tutorial.md                 |  8 ++++----
  book/src/user.md                     |  1 +
  book/src/user/frost-secp256k1.md     |  1 +
  book/src/user/frost-secp256k1/dkg.md |  1 +
  gencode/src/main.rs                  | 13 +++++++++++++
- 9 files changed, 32 insertions(+), 12 deletions(-)
+ 9 files changed, 27 insertions(+), 8 deletions(-)
  create mode 100644 book/src/user/frost-secp256k1.md
  create mode 100644 book/src/user/frost-secp256k1/dkg.md
 
 diff --git a/.github/workflows/main.yml b/.github/workflows/main.yml
-index da7d97e..39ec764 100644
+index 9b9040b..663f4fe 100644
 --- a/.github/workflows/main.yml
 +++ b/.github/workflows/main.yml
 @@ -69,7 +69,7 @@ jobs:
@@ -32,7 +32,7 @@ index da7d97e..39ec764 100644
      - uses: actions/checkout@v4.2.2
      - uses: dtolnay/rust-toolchain@master
 diff --git a/Cargo.toml b/Cargo.toml
-index fd0b143..c2ebee4 100644
+index 621852d..7f5d0a3 100644
 --- a/Cargo.toml
 +++ b/Cargo.toml
 @@ -6,6 +6,7 @@ members = [
@@ -56,53 +56,38 @@ index 01988c3..0888d21 100644
  | secp256k1 ciphersuite (Taproot) | [`frost-secp256k1-tr`]  | [![crates.io](https://img.shields.io/crates/v/frost-secp256k1-tr.svg)](https://crates.io/crates/frost-secp256k1-tr)   | [![Documentation](https://docs.rs/frost-secp256k1-tr/badge.svg)](https://docs.rs/frost-secp256k1-tr)   |
  | Generic Re-randomized FROST     | [`frost-rerandomized`]  | [![crates.io](https://img.shields.io/crates/v/frost-rerandomized.svg)](https://crates.io/crates/frost-rerandomized)   | [![Documentation](https://docs.rs/frost-rerandomized/badge.svg)](https://docs.rs/frost-rerandomized)   |
 diff --git a/book/src/dev/release-checklist.md b/book/src/dev/release-checklist.md
-index a858efe..a403a08 100644
+index 881176b..826fe98 100644
 --- a/book/src/dev/release-checklist.md
 +++ b/book/src/dev/release-checklist.md
-@@ -22,8 +22,9 @@
-    4. [Frost p256 version number](https://github.com/ZcashFoundation/frost/blob/main/frost-p256/Cargo.toml#L8)
-    5. [Frost re randomized version number](https://github.com/ZcashFoundation/frost/blob/main/frost-rerandomized/Cargo.toml#L8)
-    6. [Frost ristretto255 version number](https://github.com/ZcashFoundation/frost/blob/main/frost-ristretto255/Cargo.toml#L8)
--   7. [Frost secp256k1 evm version number](https://github.com/ZcashFoundation/frost/blob/main/frost-secp256k1-evm/Cargo.toml#L7)
--   8. [Frost secp256k1 tr version number](https://github.com/ZcashFoundation/frost/blob/main/frost-secp256k1-tr/Cargo.toml#L7)
-+   7. [Frost secp256k1 version number](https://github.com/ZcashFoundation/frost/blob/main/frost-secp256k1/Cargo.toml#L7)
-+   8. [Frost secp256k1 evm version number](https://github.com/ZcashFoundation/frost/blob/main/frost-secp256k1-evm/Cargo.toml#L7)
-+   9. [Frost secp256k1 tr version number](https://github.com/ZcashFoundation/frost/blob/main/frost-secp256k1-tr/Cargo.toml#L7)
+@@ -81,7 +81,7 @@ releases easier.
  
- 5. Decide which version to tag the release with (e.g. v0.3.0). Currently we always use the same release number for all crates, but it's possible for them to get out of sync in the future.
+ - Publish it with `cargo publish -p frost-rerandomized`
  
-@@ -75,7 +76,7 @@
+-- Check if other crates are ready to be published: `for cs in ristretto255 ed25519 secp256k1-evm secp256k1-tr p256 ed448; do cargo publish -p frost-$cs --dry-run; done`. Fix any issues if needed.
++- Check if other crates are ready to be published: `for cs in ristretto255 ed25519 secp256k1 secp256k1-evm secp256k1-tr p256 ed448; do cargo publish -p frost-$cs --dry-run; done`. Fix any issues if needed.
  
- 20. Publish it with `cargo publish -p frost-rerandomized`
+     - If you get an error like this:
  
--21. Check if other crates are ready to be published: `for cs in ristretto255 ed25519 secp256k1-evm secp256k1-tr p256 ed448; do cargo publish -p frost-$cs --dry-run; done`. Fix any issues if needed.
-+21. Check if other crates are ready to be published: `for cs in ristretto255 ed25519 secp256k1 secp256k1-evm secp256k1-tr p256 ed448; do cargo publish -p frost-$cs --dry-run; done`. Fix any issues if needed.
+@@ -91,9 +91,9 @@ releases easier.
  
-     1. If you get an error like this:
+ - Draft and publish releases for each of those crates:
  
-@@ -87,7 +88,7 @@
+-    - Run `for cs in ristretto255 ed25519 secp256k1-evm secp256k1-tr p256 ed448; do gh release create "frost-$cs/v2.1.0" -n '' -t "frost-$cs v2.1.0" --latest=false; done` (replace both instances of the version)
++    - Run `for cs in ristretto255 ed25519 secp256k1 secp256k1-evm secp256k1-tr p256 ed448; do gh release create "frost-$cs/v2.1.0" -n '' -t "frost-$cs v2.1.0" --latest=false; done` (replace both instances of the version)
  
-     1. Use the same process as described for frost-core above (actions 1 - 3), but you can leave the changelog empty and **uncheck** “Set as the latest release”
- 
--23. Publish those crates: `for cs in ristretto255 ed25519 secp256k1-evm secp256k1-tr p256 ed448; do cargo publish -p frost-$cs; done`
-+23. Publish those crates: `for cs in ristretto255 ed25519 secp256k1 secp256k1-evm secp256k1-tr p256 ed448; do cargo publish -p frost-$cs; done`
+-- Publish those crates: `for cs in ristretto255 ed25519 secp256k1-evm secp256k1-tr p256 ed448; do cargo publish -p frost-$cs; done`
++- Publish those crates: `for cs in ristretto255 ed25519 secp256k1 secp256k1-evm secp256k1-tr p256 ed448; do cargo publish -p frost-$cs; done`
  
  
  ## Confirm
-@@ -99,9 +100,10 @@
-     3. [Frost ed448](https://crates.io/crates/frost-ed448/versions)
-     4. [Frost p256](https://crates.io/crates/frost-p256/versions)
-     5. [Frost ristretto255](https://crates.io/crates/frost-ristretto255/versions)
--    6. [Frost secp256k1 evm](https://crates.io/crates/frost-secp256k1-evm/versions)
--    7. [Frost secp256k1 tr](https://crates.io/crates/frost-secp256k1-tr/versions)
--    8. [Frost rerandomized](https://crates.io/crates/frost-rerandomized/versions)
-+    6. [Frost secp256k1](https://crates.io/crates/frost-secp256k1/versions)
-+    7. [Frost secp256k1 evm](https://crates.io/crates/frost-secp256k1-evm/versions)
-+    8. [Frost secp256k1 tr](https://crates.io/crates/frost-secp256k1-tr/versions)
-+    9. [Frost rerandomized](https://crates.io/crates/frost-rerandomized/versions)
- 
- 25. Let the team know in the #frost slack channel that the release is complete and successful
- 
+@@ -105,6 +105,7 @@ releases easier.
+     - [Frost ed448](https://crates.io/crates/frost-ed448/versions)
+     - [Frost p256](https://crates.io/crates/frost-p256/versions)
+     - [Frost ristretto255](https://crates.io/crates/frost-ristretto255/versions)
++    - [Frost secp256k1](https://crates.io/crates/frost-secp256k1/versions)
+     - [Frost secp256k1 evm](https://crates.io/crates/frost-secp256k1-evm/versions)
+     - [Frost secp256k1 tr](https://crates.io/crates/frost-secp256k1-tr/versions)
+     - [Frost rerandomized](https://crates.io/crates/frost-rerandomized/versions)
 diff --git a/book/src/tutorial.md b/book/src/tutorial.md
 index 37c1127..a06d4d6 100644
 --- a/book/src/tutorial.md
