@@ -1,7 +1,7 @@
-From ffde84aa5ba0a0473e91cd32ab93e18fa0afefea Mon Sep 17 00:00:00 2001
+From da38b339824378ee389c47344a006d322ae0149b Mon Sep 17 00:00:00 2001
 From: StackOverflowExcept1on
  <109800286+StackOverflowExcept1on@users.noreply.github.com>
-Date: Tue, 4 Feb 2025 18:46:18 +0300
+Date: Mon, 17 Feb 2025 20:34:23 +0300
 Subject: [PATCH] feat: bump MSRV to 1.81, make all crates no_std
 
 ---
@@ -12,7 +12,7 @@ Subject: [PATCH] feat: bump MSRV to 1.81, make all crates no_std
  frost-core/src/error.rs              |  7 +-----
  frost-core/src/lib.rs                |  2 +-
  frost-core/src/scalar_mul.rs         | 23 +------------------
- frost-ed25519/Cargo.toml             |  7 ++----
+ frost-ed25519/Cargo.toml             |  6 ++---
  frost-ed25519/src/lib.rs             |  2 +-
  frost-ed448/Cargo.toml               |  8 +++----
  frost-ed448/src/lib.rs               | 34 ++++++++++++++--------------
@@ -29,14 +29,14 @@ Subject: [PATCH] feat: bump MSRV to 1.81, make all crates no_std
  frost-secp256k1-tr/src/lib.rs        |  2 +-
  frost-secp256k1/Cargo.toml           |  6 ++---
  frost-secp256k1/src/lib.rs           |  2 +-
- 24 files changed, 57 insertions(+), 98 deletions(-)
+ 24 files changed, 57 insertions(+), 97 deletions(-)
 
 diff --git a/.github/workflows/main.yml b/.github/workflows/main.yml
-index 663f4fe..3889cf1 100644
+index 124ac3f..77f6a63 100644
 --- a/.github/workflows/main.yml
 +++ b/.github/workflows/main.yml
-@@ -25,7 +25,7 @@ jobs:
-           command: build
+@@ -19,7 +19,7 @@ jobs:
+       - run: cargo build
  
    build_msrv:
 -    name: build with MSRV (1.66.1)
@@ -44,7 +44,7 @@ index 663f4fe..3889cf1 100644
      runs-on: ubuntu-latest
  
      steps:
-@@ -40,7 +40,7 @@ jobs:
+@@ -34,7 +34,7 @@ jobs:
        - run: cargo update -Z minimal-versions
        # Now check that `cargo build` works with respect to the oldest possible
        # deps and the stated MSRV
@@ -53,7 +53,7 @@ index 663f4fe..3889cf1 100644
        - run: cargo build --all-features
  
    # TODO: this is filling up the disk space in CI. See if there is a way to
-@@ -66,10 +66,9 @@ jobs:
+@@ -60,10 +60,9 @@ jobs:
    build_no_std:
      name: build with no_std
      runs-on: ubuntu-latest
@@ -66,10 +66,10 @@ index 663f4fe..3889cf1 100644
      - uses: actions/checkout@v4.2.2
      - uses: dtolnay/rust-toolchain@master
 diff --git a/Cargo.toml b/Cargo.toml
-index 7f5d0a3..30c3054 100644
+index a9995b0..6c5456f 100644
 --- a/Cargo.toml
 +++ b/Cargo.toml
-@@ -16,6 +16,7 @@ members = [
+@@ -15,6 +15,7 @@ members = [
  
  [workspace.package]
  edition = "2021"
@@ -78,7 +78,7 @@ index 7f5d0a3..30c3054 100644
  authors = [
      "Deirdre Connolly <durumcrustulum@gmail.com>",
 diff --git a/frost-core/CHANGELOG.md b/frost-core/CHANGELOG.md
-index 1fc774d..42123b0 100644
+index 0de4def..43d9af6 100644
 --- a/frost-core/CHANGELOG.md
 +++ b/frost-core/CHANGELOG.md
 @@ -6,6 +6,10 @@ Entries are listed in reverse chronological order.
@@ -93,7 +93,7 @@ index 1fc774d..42123b0 100644
  ## 2.1.0
  
 diff --git a/frost-core/Cargo.toml b/frost-core/Cargo.toml
-index a013a9c..5bf94c8 100644
+index 0907e8b..b3eab93 100644
 --- a/frost-core/Cargo.toml
 +++ b/frost-core/Cargo.toml
 @@ -1,6 +1,7 @@
@@ -196,19 +196,18 @@ index e8215c4..3d82b28 100644
          let mut x_u64 = vec![0u64; num_limbs];
  
 diff --git a/frost-ed25519/Cargo.toml b/frost-ed25519/Cargo.toml
-index b6d26d5..4cf912e 100644
+index 36523fd..3255a14 100644
 --- a/frost-ed25519/Cargo.toml
 +++ b/frost-ed25519/Cargo.toml
-@@ -1,7 +1,7 @@
+@@ -1,6 +1,7 @@
  [package]
  name = "frost-ed25519"
  edition.workspace = true
--
 +rust-version.workspace = true
  version.workspace = true
  authors.workspace = true
  readme = "README.md"
-@@ -37,11 +37,8 @@ rand_chacha.workspace = true
+@@ -36,11 +37,8 @@ rand_chacha.workspace = true
  serde_json.workspace = true
  
  [features]
@@ -232,7 +231,7 @@ index 9c4bce8..334922d 100644
  #![deny(missing_docs)]
  #![cfg_attr(docsrs, feature(doc_auto_cfg))]
 diff --git a/frost-ed448/Cargo.toml b/frost-ed448/Cargo.toml
-index 16282a9..ef0cbef 100644
+index bc7d85b..270d26b 100644
 --- a/frost-ed448/Cargo.toml
 +++ b/frost-ed448/Cargo.toml
 @@ -1,6 +1,7 @@
@@ -249,8 +248,8 @@ index 16282a9..ef0cbef 100644
  document-features.workspace = true
 -ed448-goldilocks = { version = "0.9.0" }
 +ed448-goldilocks-plus = { version = "0.15", features = ["zeroize"], default-features = false }
- frost-core = { path = "../frost-core", version = "2.1.0", default-features = false }
- frost-rerandomized = { path = "../frost-rerandomized", version = "2.1.0", default-features = false }
+ frost-core.workspace = true
+ frost-rerandomized.workspace = true
  rand_core.workspace = true
 @@ -35,11 +36,8 @@ rand_chacha.workspace = true
  serde_json.workspace = true
@@ -403,7 +402,7 @@ index 6c86b77..e887334 100644
      let r = <Ed448Shake256 as Ciphersuite>::Group::deserialize(&encoded_identity);
      assert_eq!(r, Err(GroupError::InvalidIdentityElement));
 diff --git a/frost-p256/Cargo.toml b/frost-p256/Cargo.toml
-index dc5e3ed..739a4d6 100644
+index 1376e4d..ce5a9e4 100644
 --- a/frost-p256/Cargo.toml
 +++ b/frost-p256/Cargo.toml
 @@ -1,6 +1,7 @@
@@ -438,7 +437,7 @@ index 35c2620..b21cb8d 100644
  #![deny(missing_docs)]
  #![cfg_attr(docsrs, feature(doc_auto_cfg))]
 diff --git a/frost-rerandomized/Cargo.toml b/frost-rerandomized/Cargo.toml
-index 878f710..c628b06 100644
+index cc3a1d3..a1b0548 100644
 --- a/frost-rerandomized/Cargo.toml
 +++ b/frost-rerandomized/Cargo.toml
 @@ -1,6 +1,7 @@
@@ -449,7 +448,7 @@ index 878f710..c628b06 100644
  version.workspace = true
  authors.workspace = true
  readme = "README.md"
-@@ -26,11 +27,8 @@ rand_core.workspace = true
+@@ -24,11 +25,8 @@ rand_core.workspace = true
  [dev-dependencies]
  
  [features]
@@ -475,7 +474,7 @@ index a309d6f..78ee354 100644
  
  extern crate alloc;
 diff --git a/frost-ristretto255/Cargo.toml b/frost-ristretto255/Cargo.toml
-index ff67d89..79285a8 100644
+index 06e8803..71e1511 100644
 --- a/frost-ristretto255/Cargo.toml
 +++ b/frost-ristretto255/Cargo.toml
 @@ -1,6 +1,7 @@
@@ -510,7 +509,7 @@ index 0929c22..cd376b6 100644
  #![deny(missing_docs)]
  #![doc = include_str!("../README.md")]
 diff --git a/frost-secp256k1-evm/Cargo.toml b/frost-secp256k1-evm/Cargo.toml
-index cfa56ad..57c5044 100644
+index 69f1f2b..81bccc6 100644
 --- a/frost-secp256k1-evm/Cargo.toml
 +++ b/frost-secp256k1-evm/Cargo.toml
 @@ -1,6 +1,7 @@
@@ -545,7 +544,7 @@ index a96ffaa..581c6f7 100644
  #![deny(missing_docs)]
  #![cfg_attr(docsrs, feature(doc_auto_cfg))]
 diff --git a/frost-secp256k1-tr/Cargo.toml b/frost-secp256k1-tr/Cargo.toml
-index 3a2292c..387d9d6 100644
+index 1f9d16e..7bcd674 100644
 --- a/frost-secp256k1-tr/Cargo.toml
 +++ b/frost-secp256k1-tr/Cargo.toml
 @@ -1,6 +1,7 @@
@@ -570,7 +569,7 @@ index 3a2292c..387d9d6 100644
  ## can use `serde` to serialize structs with any encoder that supports
  ## `serde` (e.g. JSON with `serde_json`).
 diff --git a/frost-secp256k1-tr/src/lib.rs b/frost-secp256k1-tr/src/lib.rs
-index f566f72..591b2e4 100644
+index eee93fd..cc012d0 100644
 --- a/frost-secp256k1-tr/src/lib.rs
 +++ b/frost-secp256k1-tr/src/lib.rs
 @@ -1,4 +1,4 @@
@@ -580,7 +579,7 @@ index f566f72..591b2e4 100644
  #![deny(missing_docs)]
  #![cfg_attr(docsrs, feature(doc_auto_cfg))]
 diff --git a/frost-secp256k1/Cargo.toml b/frost-secp256k1/Cargo.toml
-index 4a6ac8e..4b14d4e 100644
+index c6d6935..0868a43 100644
 --- a/frost-secp256k1/Cargo.toml
 +++ b/frost-secp256k1/Cargo.toml
 @@ -1,6 +1,7 @@
