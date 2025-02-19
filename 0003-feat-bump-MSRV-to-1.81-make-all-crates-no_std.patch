@@ -1,7 +1,7 @@
-From da38b339824378ee389c47344a006d322ae0149b Mon Sep 17 00:00:00 2001
+From 4e6d9620180fc9d5f82be8d9c339996575828029 Mon Sep 17 00:00:00 2001
 From: StackOverflowExcept1on
  <109800286+StackOverflowExcept1on@users.noreply.github.com>
-Date: Mon, 17 Feb 2025 20:34:23 +0300
+Date: Wed, 19 Feb 2025 17:48:06 +0300
 Subject: [PATCH] feat: bump MSRV to 1.81, make all crates no_std
 
 ---
@@ -12,24 +12,24 @@ Subject: [PATCH] feat: bump MSRV to 1.81, make all crates no_std
  frost-core/src/error.rs              |  7 +-----
  frost-core/src/lib.rs                |  2 +-
  frost-core/src/scalar_mul.rs         | 23 +------------------
- frost-ed25519/Cargo.toml             |  6 ++---
+ frost-ed25519/Cargo.toml             | 10 ++++----
  frost-ed25519/src/lib.rs             |  2 +-
- frost-ed448/Cargo.toml               |  8 +++----
+ frost-ed448/Cargo.toml               | 12 ++++------
  frost-ed448/src/lib.rs               | 34 ++++++++++++++--------------
  frost-ed448/src/tests/deserialize.rs |  6 ++---
- frost-p256/Cargo.toml                |  6 ++---
+ frost-p256/Cargo.toml                | 10 ++++----
  frost-p256/src/lib.rs                |  2 +-
  frost-rerandomized/Cargo.toml        |  4 +---
  frost-rerandomized/src/lib.rs        |  2 +-
- frost-ristretto255/Cargo.toml        |  6 ++---
+ frost-ristretto255/Cargo.toml        | 10 ++++----
  frost-ristretto255/src/lib.rs        |  2 +-
- frost-secp256k1-evm/Cargo.toml       |  6 ++---
+ frost-secp256k1-evm/Cargo.toml       | 10 ++++----
  frost-secp256k1-evm/src/lib.rs       |  2 +-
- frost-secp256k1-tr/Cargo.toml        |  6 ++---
+ frost-secp256k1-tr/Cargo.toml        | 10 ++++----
  frost-secp256k1-tr/src/lib.rs        |  2 +-
- frost-secp256k1/Cargo.toml           |  6 ++---
+ frost-secp256k1/Cargo.toml           | 10 ++++----
  frost-secp256k1/src/lib.rs           |  2 +-
- 24 files changed, 57 insertions(+), 97 deletions(-)
+ 24 files changed, 71 insertions(+), 111 deletions(-)
 
 diff --git a/.github/workflows/main.yml b/.github/workflows/main.yml
 index 124ac3f..77f6a63 100644
@@ -196,7 +196,7 @@ index e8215c4..3d82b28 100644
          let mut x_u64 = vec![0u64; num_limbs];
  
 diff --git a/frost-ed25519/Cargo.toml b/frost-ed25519/Cargo.toml
-index 36523fd..3255a14 100644
+index 36523fd..89adf48 100644
 --- a/frost-ed25519/Cargo.toml
 +++ b/frost-ed25519/Cargo.toml
 @@ -1,6 +1,7 @@
@@ -207,6 +207,17 @@ index 36523fd..3255a14 100644
  version.workspace = true
  authors.workspace = true
  readme = "README.md"
+@@ -24,8 +25,8 @@ sha2 = { version = "0.10.2", default-features = false }
+ 
+ [dev-dependencies]
+ criterion.workspace = true
+-frost-core = { workspace = true, features = ["std", "test-impl"] }
+-frost-rerandomized = { workspace = true, features = ["std", "test-impl"] }
++frost-core = { workspace = true, features = ["test-impl"] }
++frost-rerandomized = { workspace = true, features = ["test-impl"] }
+ ed25519-dalek = "2.1.0"
+ insta.workspace = true
+ hex.workspace = true
 @@ -36,11 +37,8 @@ rand_chacha.workspace = true
  serde_json.workspace = true
  
@@ -231,7 +242,7 @@ index 9c4bce8..334922d 100644
  #![deny(missing_docs)]
  #![cfg_attr(docsrs, feature(doc_auto_cfg))]
 diff --git a/frost-ed448/Cargo.toml b/frost-ed448/Cargo.toml
-index bc7d85b..270d26b 100644
+index bc7d85b..8e618c4 100644
 --- a/frost-ed448/Cargo.toml
 +++ b/frost-ed448/Cargo.toml
 @@ -1,6 +1,7 @@
@@ -251,6 +262,17 @@ index bc7d85b..270d26b 100644
  frost-core.workspace = true
  frost-rerandomized.workspace = true
  rand_core.workspace = true
+@@ -24,8 +25,8 @@ sha3 = { version = "0.10.6", default-features = false }
+ 
+ [dev-dependencies]
+ criterion.workspace = true
+-frost-core = { workspace = true, features = ["std", "test-impl"] }
+-frost-rerandomized = { workspace = true, features = ["std", "test-impl"] }
++frost-core = { workspace = true, features = ["test-impl"] }
++frost-rerandomized = { workspace = true, features = ["test-impl"] }
+ lazy_static.workspace = true
+ insta.workspace = true
+ hex.workspace = true
 @@ -35,11 +36,8 @@ rand_chacha.workspace = true
  serde_json.workspace = true
  
@@ -402,7 +424,7 @@ index 6c86b77..e887334 100644
      let r = <Ed448Shake256 as Ciphersuite>::Group::deserialize(&encoded_identity);
      assert_eq!(r, Err(GroupError::InvalidIdentityElement));
 diff --git a/frost-p256/Cargo.toml b/frost-p256/Cargo.toml
-index 1376e4d..ce5a9e4 100644
+index 1376e4d..e69ca45 100644
 --- a/frost-p256/Cargo.toml
 +++ b/frost-p256/Cargo.toml
 @@ -1,6 +1,7 @@
@@ -413,6 +435,17 @@ index 1376e4d..ce5a9e4 100644
  version.workspace = true
  authors.workspace = true
  readme = "README.md"
+@@ -24,8 +25,8 @@ sha2 = { version = "0.10.2", default-features = false }
+ 
+ [dev-dependencies]
+ criterion.workspace = true
+-frost-core = { workspace = true, features = ["std", "test-impl"] }
+-frost-rerandomized = { workspace = true, features = ["std", "test-impl"] }
++frost-core = { workspace = true, features = ["test-impl"] }
++frost-rerandomized = { workspace = true, features = ["test-impl"] }
+ insta.workspace = true
+ hex.workspace = true
+ lazy_static.workspace = true
 @@ -35,11 +36,8 @@ rand_chacha.workspace = true
  serde_json.workspace = true
  
@@ -474,7 +507,7 @@ index a309d6f..78ee354 100644
  
  extern crate alloc;
 diff --git a/frost-ristretto255/Cargo.toml b/frost-ristretto255/Cargo.toml
-index 06e8803..71e1511 100644
+index 06e8803..355d5b4 100644
 --- a/frost-ristretto255/Cargo.toml
 +++ b/frost-ristretto255/Cargo.toml
 @@ -1,6 +1,7 @@
@@ -485,6 +518,17 @@ index 06e8803..71e1511 100644
  version.workspace = true
  authors.workspace = true
  readme = "README.md"
+@@ -24,8 +25,8 @@ sha2 = { version = "0.10.2", default-features = false }
+ 
+ [dev-dependencies]
+ criterion = { workspace = true, features = ["html_reports"] }
+-frost-core = { workspace = true, features = ["std", "test-impl"] }
+-frost-rerandomized = { workspace = true, features = ["std", "test-impl"] }
++frost-core = { workspace = true, features = ["test-impl"] }
++frost-rerandomized = { workspace = true, features = ["test-impl"] }
+ insta.workspace = true
+ hex.workspace = true
+ lazy_static.workspace = true
 @@ -36,11 +37,8 @@ rand_chacha.workspace = true
  serde_json.workspace = true
  
@@ -509,7 +553,7 @@ index 0929c22..cd376b6 100644
  #![deny(missing_docs)]
  #![doc = include_str!("../README.md")]
 diff --git a/frost-secp256k1-evm/Cargo.toml b/frost-secp256k1-evm/Cargo.toml
-index 69f1f2b..81bccc6 100644
+index 69f1f2b..eb1da44 100644
 --- a/frost-secp256k1-evm/Cargo.toml
 +++ b/frost-secp256k1-evm/Cargo.toml
 @@ -1,6 +1,7 @@
@@ -520,6 +564,17 @@ index 69f1f2b..81bccc6 100644
  version.workspace = true
  authors.workspace = true
  readme = "README.md"
+@@ -24,8 +25,8 @@ sha3 = { version = "0.10.6", default-features = false }
+ 
+ [dev-dependencies]
+ criterion.workspace = true
+-frost-core = { workspace = true, features = ["std", "test-impl"] }
+-frost-rerandomized = { workspace = true, features = ["std", "test-impl"] }
++frost-core = { workspace = true, features = ["test-impl"] }
++frost-rerandomized = { workspace = true, features = ["test-impl"] }
+ insta.workspace = true
+ hex.workspace = true
+ lazy_static.workspace = true
 @@ -35,11 +36,8 @@ rand_chacha.workspace = true
  serde_json.workspace = true
  
@@ -544,7 +599,7 @@ index a96ffaa..581c6f7 100644
  #![deny(missing_docs)]
  #![cfg_attr(docsrs, feature(doc_auto_cfg))]
 diff --git a/frost-secp256k1-tr/Cargo.toml b/frost-secp256k1-tr/Cargo.toml
-index 1f9d16e..7bcd674 100644
+index 1f9d16e..c4e6699 100644
 --- a/frost-secp256k1-tr/Cargo.toml
 +++ b/frost-secp256k1-tr/Cargo.toml
 @@ -1,6 +1,7 @@
@@ -555,6 +610,17 @@ index 1f9d16e..7bcd674 100644
  version.workspace = true
  authors.workspace = true
  readme = "README.md"
+@@ -24,8 +25,8 @@ sha2 = { version = "0.10.2", default-features = false }
+ 
+ [dev-dependencies]
+ criterion.workspace = true
+-frost-core = { workspace = true, features = ["std", "test-impl"] }
+-frost-rerandomized = { workspace = true, features = ["std", "test-impl"] }
++frost-core = { workspace = true, features = ["test-impl"] }
++frost-rerandomized = { workspace = true, features = ["test-impl"] }
+ insta.workspace = true
+ hex.workspace = true
+ lazy_static.workspace = true
 @@ -36,11 +37,8 @@ secp256k1 = "0.30.0"
  serde_json.workspace = true
  
@@ -579,7 +645,7 @@ index eee93fd..cc012d0 100644
  #![deny(missing_docs)]
  #![cfg_attr(docsrs, feature(doc_auto_cfg))]
 diff --git a/frost-secp256k1/Cargo.toml b/frost-secp256k1/Cargo.toml
-index c6d6935..0868a43 100644
+index c6d6935..a027958 100644
 --- a/frost-secp256k1/Cargo.toml
 +++ b/frost-secp256k1/Cargo.toml
 @@ -1,6 +1,7 @@
@@ -590,6 +656,17 @@ index c6d6935..0868a43 100644
  version.workspace = true
  authors.workspace = true
  readme = "README.md"
+@@ -24,8 +25,8 @@ sha2 = { version = "0.10.2", default-features = false }
+ 
+ [dev-dependencies]
+ criterion.workspace = true
+-frost-core = { workspace = true, features = ["std", "test-impl"] }
+-frost-rerandomized = { workspace = true, features = ["std", "test-impl"] }
++frost-core = { workspace = true, features = ["test-impl"] }
++frost-rerandomized = { workspace = true, features = ["test-impl"] }
+ insta.workspace = true
+ hex.workspace = true
+ lazy_static.workspace = true
 @@ -35,11 +36,8 @@ rand_chacha.workspace = true
  serde_json.workspace = true
  
