@@ -1,7 +1,7 @@
-From 35578719abd017b373aaa87d4b2def4af55d7f7f Mon Sep 17 00:00:00 2001
+From aa17193fbfba2a83cc6d01397688c213807294b5 Mon Sep 17 00:00:00 2001
 From: StackOverflowExcept1on
  <109800286+StackOverflowExcept1on@users.noreply.github.com>
-Date: Mon, 17 Feb 2025 20:24:46 +0300
+Date: Tue, 25 Feb 2025 06:23:07 +0300
 Subject: [PATCH] feat: add `frost-secp256k1-evm` crate
 
 ---
@@ -30,7 +30,7 @@ Subject: [PATCH] feat: add `frost-secp256k1-evm` crate
  .../src/tests/coefficient_commitment.rs       |  8 +-
  .../src/tests/deserialize.rs                  | 12 +--
  .../src/tests/proptests.rs                    |  2 +-
- .../src/tests/vss_commitment.rs               | 17 ++--
+ .../src/tests/vss_commitment.rs               | 28 +++---
  .../tests/common_traits_tests.rs              |  2 +-
  .../tests/helpers/elements.json               |  0
  .../tests/helpers/mod.rs                      |  0
@@ -62,7 +62,7 @@ Subject: [PATCH] feat: add `frost-secp256k1-evm` crate
  ...round2_package_postcard_serialization.snap |  5 --
  ...igning_package_postcard_serialization.snap |  5 --
  gencode/src/main.rs                           | 14 +--
- 57 files changed, 401 insertions(+), 388 deletions(-)
+ 57 files changed, 407 insertions(+), 393 deletions(-)
  create mode 100644 book/src/user/frost-secp256k1-evm.md
  create mode 100644 book/src/user/frost-secp256k1-evm/dkg.md
  delete mode 100644 book/src/user/frost-secp256k1.md
@@ -80,7 +80,7 @@ Subject: [PATCH] feat: add `frost-secp256k1-evm` crate
  rename {frost-secp256k1 => frost-secp256k1-evm}/src/tests/coefficient_commitment.rs (90%)
  rename {frost-secp256k1 => frost-secp256k1-evm}/src/tests/deserialize.rs (72%)
  rename {frost-secp256k1 => frost-secp256k1-evm}/src/tests/proptests.rs (91%)
- rename {frost-secp256k1 => frost-secp256k1-evm}/src/tests/vss_commitment.rs (80%)
+ rename {frost-secp256k1 => frost-secp256k1-evm}/src/tests/vss_commitment.rs (81%)
  rename {frost-secp256k1 => frost-secp256k1-evm}/tests/common_traits_tests.rs (98%)
  rename {frost-secp256k1 => frost-secp256k1-evm}/tests/helpers/elements.json (100%)
  rename {frost-secp256k1 => frost-secp256k1-evm}/tests/helpers/mod.rs (100%)
@@ -829,13 +829,13 @@ index dd59856..ca749d3 100644
          // Apply tweaks to each case.
          for t in &tweaks {
 diff --git a/frost-secp256k1/src/tests/vss_commitment.rs b/frost-secp256k1-evm/src/tests/vss_commitment.rs
-similarity index 80%
+similarity index 81%
 rename from frost-secp256k1/src/tests/vss_commitment.rs
 rename to frost-secp256k1-evm/src/tests/vss_commitment.rs
-index 5574f59..f305b98 100644
+index 79aa89a..48fdf4e 100644
 --- a/frost-secp256k1/src/tests/vss_commitment.rs
 +++ b/frost-secp256k1-evm/src/tests/vss_commitment.rs
-@@ -13,25 +13,30 @@ lazy_static! {
+@@ -13,13 +13,13 @@ lazy_static! {
  #[test]
  fn check_serialize_vss_commitment() {
      let rng = rand::rngs::OsRng;
@@ -844,12 +844,33 @@ index 5574f59..f305b98 100644
  }
  
  #[test]
+ fn check_serialize_whole_vss_commitment() {
+     let rng = rand::rngs::OsRng;
+-    frost_core::tests::vss_commitment::check_serialize_whole_vss_commitment::<Secp256K1Sha256, _>(
++    frost_core::tests::vss_commitment::check_serialize_whole_vss_commitment::<Secp256K1Keccak256, _>(
+         rng,
+     );
+ }
+@@ -27,30 +27,34 @@ fn check_serialize_whole_vss_commitment() {
+ #[test]
  fn check_deserialize_vss_commitment() {
      let rng = rand::rngs::OsRng;
 -    frost_core::tests::vss_commitment::check_deserialize_vss_commitment::<Secp256K1Sha256, _>(rng);
 +    frost_core::tests::vss_commitment::check_deserialize_vss_commitment::<Secp256K1Keccak256, _>(
 +        rng,
 +    );
+ }
+ 
+ #[test]
+ fn check_deserialize_whole_vss_commitment() {
+     let rng = rand::rngs::OsRng;
+-    frost_core::tests::vss_commitment::check_deserialize_whole_vss_commitment::<Secp256K1Sha256, _>(
+-        rng,
+-    );
++    frost_core::tests::vss_commitment::check_deserialize_whole_vss_commitment::<
++        Secp256K1Keccak256,
++        _,
++    >(rng);
  }
  
  #[test]
@@ -864,6 +885,16 @@ index 5574f59..f305b98 100644
 +    >(rng, &ELEMENTS);
  }
  
+ #[test]
+ fn check_deserialize_whole_vss_commitment_error() {
+     let rng = rand::rngs::OsRng;
+     frost_core::tests::vss_commitment::check_deserialize_whole_vss_commitment_error::<
+-        Secp256K1Sha256,
++        Secp256K1Keccak256,
+         _,
+     >(rng, &ELEMENTS);
+ }
+@@ -58,5 +62,7 @@ fn check_deserialize_whole_vss_commitment_error() {
  #[test]
  fn check_compute_public_key_package() {
      let rng = rand::rngs::OsRng;

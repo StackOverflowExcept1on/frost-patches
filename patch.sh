@@ -3,7 +3,7 @@ set -ex
 
 export LANG="en_US.UTF-8"
 COMMIT_DATE="$(date)"
-# COMMIT_HASH="fc87f59cc08e8721e9c543fbd90aed7da4bf0d67"
+# COMMIT_HASH="aed1ea885c29efe38f5df27fd0f8cd7b2ac380a5"
 
 rm -rf frost
 git clone git@github.com:ZcashFoundation/frost.git
