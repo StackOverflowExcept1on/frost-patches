@@ -1,7 +1,7 @@
-From 58b366f6f4601499d842a9712d86e1c1aafe46d6 Mon Sep 17 00:00:00 2001
+From 4d9a12b709838438bfd2ab565828072c2af130e0 Mon Sep 17 00:00:00 2001
 From: StackOverflowExcept1on
  <109800286+StackOverflowExcept1on@users.noreply.github.com>
-Date: Thu, 16 Jan 2025 13:44:52 +0300
+Date: Sun, 2 Mar 2025 12:31:29 +0300
 Subject: [PATCH] feat(frost-core): simplify trait bounds, don't use the
  allocator in some places
 
@@ -13,12 +13,12 @@ Subject: [PATCH] feat(frost-core): simplify trait bounds, don't use the
  frost-core/src/tests/repairable.rs            | 10 ++--
  frost-core/src/tests/vectors.rs               |  3 +-
  frost-core/src/tests/vectors_dkg.rs           |  2 +
- frost-core/src/tests/vss_commitment.rs        |  2 +-
+ frost-core/src/tests/vss_commitment.rs        |  4 +-
  frost-core/src/traits.rs                      | 16 ++++---
- 9 files changed, 62 insertions(+), 63 deletions(-)
+ 9 files changed, 63 insertions(+), 64 deletions(-)
 
 diff --git a/frost-core/src/lib.rs b/frost-core/src/lib.rs
-index 7a36e62..a016e86 100644
+index a0e232b..bcaa2aa 100644
 --- a/frost-core/src/lib.rs
 +++ b/frost-core/src/lib.rs
 @@ -272,12 +272,13 @@ where
@@ -203,7 +203,7 @@ index b3392ca..533bf54 100644
          .debugless_unwrap();
  
 diff --git a/frost-core/src/tests/repairable.rs b/frost-core/src/tests/repairable.rs
-index 532e1e0..80e4e0b 100644
+index a922e32..27136f8 100644
 --- a/frost-core/src/tests/repairable.rs
 +++ b/frost-core/src/tests/repairable.rs
 @@ -92,9 +92,11 @@ pub fn check_rts<C: Ciphersuite, R: RngCore + CryptoRng>(mut rng: R) {
@@ -272,10 +272,19 @@ index 894eda2..f91c80e 100644
          .debugless_unwrap()
  }
 diff --git a/frost-core/src/tests/vss_commitment.rs b/frost-core/src/tests/vss_commitment.rs
-index 1046522..4e76873 100644
+index 7b32b5e..6949581 100644
 --- a/frost-core/src/tests/vss_commitment.rs
 +++ b/frost-core/src/tests/vss_commitment.rs
-@@ -92,7 +92,7 @@ pub fn check_deserialize_vss_commitment_error<C: Ciphersuite, R: RngCore + Crypt
+@@ -161,7 +161,7 @@ pub fn check_deserialize_vss_commitment_error<C: Ciphersuite, R: RngCore + Crypt
+ 
+     let serialized: <C::Group as Group>::Serialization =
+         <C::Group as Group>::Serialization::try_from(
+-            hex::decode(values["invalid_element"].as_str().unwrap()).unwrap(),
++            &hex::decode(values["invalid_element"].as_str().unwrap()).unwrap(),
+         )
+         .debugless_unwrap();
+     // ---
+@@ -194,7 +194,7 @@ pub fn check_deserialize_whole_vss_commitment_error<C: Ciphersuite, R: RngCore +
  
      let serialized: <C::Group as Group>::Serialization =
          <C::Group as Group>::Serialization::try_from(

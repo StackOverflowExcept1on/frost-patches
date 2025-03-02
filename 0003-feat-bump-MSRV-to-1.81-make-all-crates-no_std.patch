@@ -1,35 +1,36 @@
-From 4e6d9620180fc9d5f82be8d9c339996575828029 Mon Sep 17 00:00:00 2001
+From 8b34bcb4f513db6907b637ce67672a1f23b9f34b Mon Sep 17 00:00:00 2001
 From: StackOverflowExcept1on
  <109800286+StackOverflowExcept1on@users.noreply.github.com>
-Date: Wed, 19 Feb 2025 17:48:06 +0300
+Date: Sun, 2 Mar 2025 12:19:48 +0300
 Subject: [PATCH] feat: bump MSRV to 1.81, make all crates no_std
 
 ---
- .github/workflows/main.yml           |  7 +++---
- Cargo.toml                           |  1 +
- frost-core/CHANGELOG.md              |  4 ++++
- frost-core/Cargo.toml                |  8 +++----
- frost-core/src/error.rs              |  7 +-----
- frost-core/src/lib.rs                |  2 +-
- frost-core/src/scalar_mul.rs         | 23 +------------------
- frost-ed25519/Cargo.toml             | 10 ++++----
- frost-ed25519/src/lib.rs             |  2 +-
- frost-ed448/Cargo.toml               | 12 ++++------
- frost-ed448/src/lib.rs               | 34 ++++++++++++++--------------
- frost-ed448/src/tests/deserialize.rs |  6 ++---
- frost-p256/Cargo.toml                | 10 ++++----
- frost-p256/src/lib.rs                |  2 +-
- frost-rerandomized/Cargo.toml        |  4 +---
- frost-rerandomized/src/lib.rs        |  2 +-
- frost-ristretto255/Cargo.toml        | 10 ++++----
- frost-ristretto255/src/lib.rs        |  2 +-
- frost-secp256k1-evm/Cargo.toml       | 10 ++++----
- frost-secp256k1-evm/src/lib.rs       |  2 +-
- frost-secp256k1-tr/Cargo.toml        | 10 ++++----
- frost-secp256k1-tr/src/lib.rs        |  2 +-
- frost-secp256k1/Cargo.toml           | 10 ++++----
- frost-secp256k1/src/lib.rs           |  2 +-
- 24 files changed, 71 insertions(+), 111 deletions(-)
+ .github/workflows/main.yml             |  7 +++---
+ Cargo.toml                             |  1 +
+ frost-core/CHANGELOG.md                |  4 +++
+ frost-core/Cargo.toml                  |  8 +++---
+ frost-core/src/error.rs                |  7 +-----
+ frost-core/src/lib.rs                  |  2 +-
+ frost-core/src/scalar_mul.rs           | 23 +----------------
+ frost-core/src/tests/vss_commitment.rs |  1 +
+ frost-ed25519/Cargo.toml               | 10 +++-----
+ frost-ed25519/src/lib.rs               |  2 +-
+ frost-ed448/Cargo.toml                 | 12 ++++-----
+ frost-ed448/src/lib.rs                 | 34 +++++++++++++-------------
+ frost-ed448/src/tests/deserialize.rs   |  6 ++---
+ frost-p256/Cargo.toml                  | 10 +++-----
+ frost-p256/src/lib.rs                  |  2 +-
+ frost-rerandomized/Cargo.toml          |  4 +--
+ frost-rerandomized/src/lib.rs          |  2 +-
+ frost-ristretto255/Cargo.toml          | 10 +++-----
+ frost-ristretto255/src/lib.rs          |  2 +-
+ frost-secp256k1-evm/Cargo.toml         | 10 +++-----
+ frost-secp256k1-evm/src/lib.rs         |  2 +-
+ frost-secp256k1-tr/Cargo.toml          | 10 +++-----
+ frost-secp256k1-tr/src/lib.rs          |  2 +-
+ frost-secp256k1/Cargo.toml             | 10 +++-----
+ frost-secp256k1/src/lib.rs             |  2 +-
+ 25 files changed, 72 insertions(+), 111 deletions(-)
 
 diff --git a/.github/workflows/main.yml b/.github/workflows/main.yml
 index 124ac3f..77f6a63 100644
@@ -195,6 +196,18 @@ index e8215c4..3d82b28 100644
  
          let mut x_u64 = vec![0u64; num_limbs];
  
+diff --git a/frost-core/src/tests/vss_commitment.rs b/frost-core/src/tests/vss_commitment.rs
+index 25fe7a2..7b32b5e 100644
+--- a/frost-core/src/tests/vss_commitment.rs
++++ b/frost-core/src/tests/vss_commitment.rs
+@@ -5,6 +5,7 @@ use crate::{
+     tests::helpers::generate_element,
+     Error, Group,
+ };
++use alloc::vec::Vec;
+ use debugless_unwrap::DebuglessUnwrap;
+ use rand_core::{CryptoRng, RngCore};
+ use serde_json::Value;
 diff --git a/frost-ed25519/Cargo.toml b/frost-ed25519/Cargo.toml
 index 36523fd..89adf48 100644
 --- a/frost-ed25519/Cargo.toml
