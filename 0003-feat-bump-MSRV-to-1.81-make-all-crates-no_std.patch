@@ -1,7 +1,7 @@
-From 8b34bcb4f513db6907b637ce67672a1f23b9f34b Mon Sep 17 00:00:00 2001
+From 1083104fb30edfa5dfa7a3623b94391e5bad6164 Mon Sep 17 00:00:00 2001
 From: StackOverflowExcept1on
  <109800286+StackOverflowExcept1on@users.noreply.github.com>
-Date: Sun, 2 Mar 2025 12:19:48 +0300
+Date: Sat, 22 Mar 2025 15:08:41 +0300
 Subject: [PATCH] feat: bump MSRV to 1.81, make all crates no_std
 
 ---
@@ -255,7 +255,7 @@ index 9c4bce8..334922d 100644
  #![deny(missing_docs)]
  #![cfg_attr(docsrs, feature(doc_auto_cfg))]
 diff --git a/frost-ed448/Cargo.toml b/frost-ed448/Cargo.toml
-index bc7d85b..8e618c4 100644
+index bc7d85b..8e812c1 100644
 --- a/frost-ed448/Cargo.toml
 +++ b/frost-ed448/Cargo.toml
 @@ -1,6 +1,7 @@
@@ -271,7 +271,7 @@ index bc7d85b..8e618c4 100644
  [dependencies]
  document-features.workspace = true
 -ed448-goldilocks = { version = "0.9.0" }
-+ed448-goldilocks-plus = { version = "0.15", features = ["zeroize"], default-features = false }
++ed448-goldilocks-plus = { version = "0.16", features = ["zeroize"], default-features = false }
  frost-core.workspace = true
  frost-rerandomized.workspace = true
  rand_core.workspace = true
