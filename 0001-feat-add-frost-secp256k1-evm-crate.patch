@@ -1,7 +1,7 @@
-From aa17193fbfba2a83cc6d01397688c213807294b5 Mon Sep 17 00:00:00 2001
+From 3e8f20df64d736229f2b60b4a1981ce7a79f4765 Mon Sep 17 00:00:00 2001
 From: StackOverflowExcept1on
  <109800286+StackOverflowExcept1on@users.noreply.github.com>
-Date: Tue, 25 Feb 2025 06:23:07 +0300
+Date: Fri, 29 Aug 2025 18:01:26 +0300
 Subject: [PATCH] feat: add `frost-secp256k1-evm` crate
 
 ---
@@ -16,7 +16,7 @@ Subject: [PATCH] feat: add `frost-secp256k1-evm` crate
  book/src/user/frost-secp256k1-evm/dkg.md      |  1 +
  book/src/user/frost-secp256k1.md              |  1 -
  book/src/user/frost-secp256k1/dkg.md          |  1 -
- frost-core/CHANGELOG.md                       |  3 +
+ frost-core/CHANGELOG.md                       |  5 +
  .../Cargo.toml                                |  6 +-
  .../README.md                                 |  4 +-
  .../benches/bench.rs                          |  6 +-
@@ -24,7 +24,7 @@ Subject: [PATCH] feat: add `frost-secp256k1-evm` crate
  .../src/keys/dkg.rs                           |  0
  .../src/keys/refresh.rs                       |  0
  .../src/keys/repairable.rs                    | 16 ++--
- .../src/lib.rs                                | 62 ++++++-------
+ .../src/lib.rs                                | 62 ++++++------
  .../src/tests.rs                              |  0
  frost-secp256k1-evm/src/tests/batch.rs        | 22 +++++
  .../src/tests/coefficient_commitment.rs       |  8 +-
@@ -37,37 +37,37 @@ Subject: [PATCH] feat: add `frost-secp256k1-evm` crate
  .../tests/helpers/repair-share.json           |  0
  .../tests/helpers/samples.json                |  0
  .../tests/helpers/samples.rs                  |  4 +-
- .../tests/helpers/vectors-big-identifier.json | 60 ++++++-------
- .../tests/helpers/vectors.json                | 77 +++++++++++++++++
- .../tests/helpers/vectors_dkg.json            | 51 +++++++++++
- .../tests/integration_tests.rs                | 86 ++++++++++---------
+ .../tests/helpers/vectors-big-identifier.json | 60 ++++++------
+ .../tests/helpers/vectors.json                | 77 +++++++++++++++
+ .../tests/helpers/vectors_dkg.json            | 51 ++++++++++
+ .../tests/integration_tests.rs                | 95 ++++++++++---------
  .../tests/recreation_tests.rs                 |  2 +-
  .../tests/rerandomized_tests.rs               |  4 +-
- .../tests/serde_tests.rs                      | 84 +++++++++---------
+ .../tests/serde_tests.rs                      | 84 ++++++++--------
  .../tests/serialization_tests.rs              |  2 +-
  ...ck_key_package_postcard_serialization.snap |  4 +-
  ...ic_key_package_postcard_serialization.snap |  4 +-
  ...round1_package_postcard_serialization.snap |  4 +-
  ...secret_package_postcard_serialization.snap |  2 +-
- ...round2_package_postcard_serialization.snap |  5 ++
+ ...round2_package_postcard_serialization.snap |  5 +
  ...secret_package_postcard_serialization.snap |  2 +-
  ...k_secret_share_postcard_serialization.snap |  4 +-
  ...ignature_share_postcard_serialization.snap |  2 +-
  ...ng_commitments_postcard_serialization.snap |  4 +-
  ...signing_nonces_postcard_serialization.snap |  4 +-
- ...igning_package_postcard_serialization.snap |  5 ++
+ ...igning_package_postcard_serialization.snap |  5 +
  frost-secp256k1/src/tests/batch.rs            | 22 -----
- frost-secp256k1/tests/helpers/vectors.json    | 77 -----------------
- .../tests/helpers/vectors_dkg.json            | 51 -----------
- ...round2_package_postcard_serialization.snap |  5 --
- ...igning_package_postcard_serialization.snap |  5 --
+ frost-secp256k1/tests/helpers/vectors.json    | 77 ---------------
+ .../tests/helpers/vectors_dkg.json            | 51 ----------
+ ...round2_package_postcard_serialization.snap |  5 -
+ ...igning_package_postcard_serialization.snap |  5 -
  gencode/src/main.rs                           | 14 +--
- 57 files changed, 407 insertions(+), 393 deletions(-)
+ 57 files changed, 414 insertions(+), 397 deletions(-)
  create mode 100644 book/src/user/frost-secp256k1-evm.md
  create mode 100644 book/src/user/frost-secp256k1-evm/dkg.md
  delete mode 100644 book/src/user/frost-secp256k1.md
  delete mode 100644 book/src/user/frost-secp256k1/dkg.md
- rename {frost-secp256k1 => frost-secp256k1-evm}/Cargo.toml (93%)
+ rename {frost-secp256k1 => frost-secp256k1-evm}/Cargo.toml (94%)
  rename {frost-secp256k1 => frost-secp256k1-evm}/README.md (97%)
  rename {frost-secp256k1 => frost-secp256k1-evm}/benches/bench.rs (62%)
  rename {frost-secp256k1 => frost-secp256k1-evm}/dkg.md (99%)
@@ -90,7 +90,7 @@ Subject: [PATCH] feat: add `frost-secp256k1-evm` crate
  rename {frost-secp256k1 => frost-secp256k1-evm}/tests/helpers/vectors-big-identifier.json (92%)
  create mode 100644 frost-secp256k1-evm/tests/helpers/vectors.json
  create mode 100644 frost-secp256k1-evm/tests/helpers/vectors_dkg.json
- rename {frost-secp256k1 => frost-secp256k1-evm}/tests/integration_tests.rs (86%)
+ rename {frost-secp256k1 => frost-secp256k1-evm}/tests/integration_tests.rs (85%)
  rename {frost-secp256k1 => frost-secp256k1-evm}/tests/recreation_tests.rs (99%)
  rename {frost-secp256k1 => frost-secp256k1-evm}/tests/rerandomized_tests.rs (71%)
  rename {frost-secp256k1 => frost-secp256k1-evm}/tests/serde_tests.rs (89%)
@@ -113,7 +113,7 @@ Subject: [PATCH] feat: add `frost-secp256k1-evm` crate
  delete mode 100644 frost-secp256k1/tests/snapshots/serialization_tests__check_signing_package_postcard_serialization.snap
 
 diff --git a/.github/workflows/main.yml b/.github/workflows/main.yml
-index 7c6d0e4..e298a42 100644
+index 20cbcd7..e8d70e1 100644
 --- a/.github/workflows/main.yml
 +++ b/.github/workflows/main.yml
 @@ -63,7 +63,7 @@ jobs:
@@ -126,7 +126,7 @@ index 7c6d0e4..e298a42 100644
      - uses: actions/checkout@v4.2.2
      - uses: dtolnay/rust-toolchain@master
 diff --git a/Cargo.toml b/Cargo.toml
-index c940a76..c3036fc 100644
+index ae89d57..97afff1 100644
 --- a/Cargo.toml
 +++ b/Cargo.toml
 @@ -6,7 +6,7 @@ members = [
@@ -179,7 +179,7 @@ index 019b60d..01988c3 100644
  The parts of the
  [`Ed448-Goldilocks`](https://github.com/crate-crypto/Ed448-Goldilocks)
 diff --git a/book/src/dev/frost-dependencies-for-audit.md b/book/src/dev/frost-dependencies-for-audit.md
-index cc8c13c..ad715a2 100644
+index 98f8853..5ad4317 100644
 --- a/book/src/dev/frost-dependencies-for-audit.md
 +++ b/book/src/dev/frost-dependencies-for-audit.md
 @@ -46,6 +46,7 @@ The following crates and dependencies are out of scope for the audit.
@@ -281,24 +281,26 @@ index d91ff24..0000000
 -{{#include ../../../../frost-secp256k1/dkg.md}}
 \ No newline at end of file
 diff --git a/frost-core/CHANGELOG.md b/frost-core/CHANGELOG.md
-index 46eaca6..0de4def 100644
+index a5f2e42..995fc97 100644
 --- a/frost-core/CHANGELOG.md
 +++ b/frost-core/CHANGELOG.md
-@@ -4,6 +4,9 @@ Entries are listed in reverse chronological order.
+@@ -2,6 +2,11 @@
  
- ## Unreleased
+ Entries are listed in reverse chronological order.
  
++## Unreleased
++
 +* Added a new ciphersuite `frost-secp256k1-evm` that uses the secp256k1
 +  elliptic curve with hash keccak256.
 +
- ## 2.1.0
+ ## 2.2.0
  
- * It is now possible to identify the culprit in `frost_core::keys::dkg::part3()`
+ ### Security Fixes
 diff --git a/frost-secp256k1/Cargo.toml b/frost-secp256k1-evm/Cargo.toml
-similarity index 93%
+similarity index 94%
 rename from frost-secp256k1/Cargo.toml
 rename to frost-secp256k1-evm/Cargo.toml
-index c6d6935..69f1f2b 100644
+index 30e20d5..1a58c54 100644
 --- a/frost-secp256k1/Cargo.toml
 +++ b/frost-secp256k1-evm/Cargo.toml
 @@ -1,5 +1,5 @@
@@ -306,9 +308,9 @@ index c6d6935..69f1f2b 100644
 -name = "frost-secp256k1"
 +name = "frost-secp256k1-evm"
  edition.workspace = true
+ rust-version.workspace = true
  version.workspace = true
- authors.workspace = true
-@@ -8,7 +8,7 @@ license.workspace = true
+@@ -9,7 +9,7 @@ license.workspace = true
  repository.workspace = true
  categories.workspace = true
  keywords = ["cryptography", "crypto", "secp256k1", "threshold", "signature"]
@@ -317,7 +319,7 @@ index c6d6935..69f1f2b 100644
  
  [package.metadata.docs.rs]
  features = ["serde"]
-@@ -20,7 +20,7 @@ frost-core.workspace = true
+@@ -21,7 +21,7 @@ frost-core.workspace = true
  frost-rerandomized.workspace = true
  k256 = { version = "0.13.0", features = ["arithmetic", "expose-field", "hash2curve"], default-features = false }
  rand_core.workspace = true
@@ -471,7 +473,7 @@ diff --git a/frost-secp256k1/src/lib.rs b/frost-secp256k1-evm/src/lib.rs
 similarity index 88%
 rename from frost-secp256k1/src/lib.rs
 rename to frost-secp256k1-evm/src/lib.rs
-index eec2c8e..a96ffaa 100644
+index 9485a23..581c6f7 100644
 --- a/frost-secp256k1/src/lib.rs
 +++ b/frost-secp256k1-evm/src/lib.rs
 @@ -21,7 +21,7 @@ use k256::{
@@ -1207,10 +1209,10 @@ index 0000000..0af7fec
 +    }
 +  }
 diff --git a/frost-secp256k1/tests/integration_tests.rs b/frost-secp256k1-evm/tests/integration_tests.rs
-similarity index 86%
+similarity index 85%
 rename from frost-secp256k1/tests/integration_tests.rs
 rename to frost-secp256k1-evm/tests/integration_tests.rs
-index 0676f61..73694f6 100644
+index 0356b0a..738cfde 100644
 --- a/frost-secp256k1/tests/integration_tests.rs
 +++ b/frost-secp256k1-evm/tests/integration_tests.rs
 @@ -1,17 +1,17 @@
@@ -1357,12 +1359,34 @@ index 0676f61..73694f6 100644
          _,
      >(max_signers, min_signers, &identifiers, error, rng);
  }
-@@ -183,14 +184,14 @@ fn check_refresh_shares_with_dealer_fails_with_invalid_identifier() {
+@@ -184,7 +185,7 @@ fn check_refresh_shares_with_dealer_fails_with_different_min_signers() {
+     let rng = rand::rngs::OsRng;
+ 
+     frost_core::tests::refresh::check_refresh_shares_with_dealer_fails_with_different_min_signers::<
+-        Secp256K1Sha256,
++        Secp256K1Keccak256,
+         _,
+     >(rng);
+ }
+@@ -193,23 +194,24 @@ fn check_refresh_shares_with_dealer_fails_with_different_min_signers() {
  fn check_refresh_shares_with_dkg() {
      let rng = rand::rngs::OsRng;
  
 -    frost_core::tests::refresh::check_refresh_shares_with_dkg::<Secp256K1Sha256, _>(rng);
 +    frost_core::tests::refresh::check_refresh_shares_with_dkg::<Secp256K1Keccak256, _>(rng);
+ }
+ 
+ #[test]
+ fn check_refresh_shares_with_dkg_smaller_threshold() {
+     let rng = rand::rngs::OsRng;
+ 
+-    frost_core::tests::refresh::check_refresh_shares_with_dkg_smaller_threshold::<Secp256K1Sha256, _>(
+-        rng,
+-    );
++    frost_core::tests::refresh::check_refresh_shares_with_dkg_smaller_threshold::<
++        Secp256K1Keccak256,
++        _,
++    >(rng);
  }
  
  #[test]
@@ -1374,7 +1398,7 @@ index 0676f61..73694f6 100644
  }
  
  #[test]
-@@ -202,7 +203,7 @@ fn check_sign_with_dealer_fails_with_invalid_min_signers() {
+@@ -221,7 +223,7 @@ fn check_sign_with_dealer_fails_with_invalid_min_signers() {
      let error = Error::InvalidMinSigners;
  
      frost_core::tests::ciphersuite_generic::check_sign_with_dealer_fails_with_invalid_signers::<
@@ -1383,7 +1407,7 @@ index 0676f61..73694f6 100644
          _,
      >(min_signers, max_signers, error, rng);
  }
-@@ -213,10 +214,10 @@ fn check_sign_with_dealer_fails_with_min_signers_greater_than_max() {
+@@ -232,10 +234,10 @@ fn check_sign_with_dealer_fails_with_min_signers_greater_than_max() {
  
      let min_signers = 3;
      let max_signers = 2;
@@ -1396,7 +1420,7 @@ index 0676f61..73694f6 100644
          _,
      >(min_signers, max_signers, error, rng);
  }
-@@ -230,7 +231,7 @@ fn check_sign_with_dealer_fails_with_invalid_max_signers() {
+@@ -249,7 +251,7 @@ fn check_sign_with_dealer_fails_with_invalid_max_signers() {
      let error = Error::InvalidMaxSigners;
  
      frost_core::tests::ciphersuite_generic::check_sign_with_dealer_fails_with_invalid_signers::<
@@ -1405,7 +1429,7 @@ index 0676f61..73694f6 100644
          _,
      >(min_signers, max_signers, error, rng);
  }
-@@ -238,9 +239,9 @@ fn check_sign_with_dealer_fails_with_invalid_max_signers() {
+@@ -257,9 +259,9 @@ fn check_sign_with_dealer_fails_with_invalid_max_signers() {
  /// This is testing that Shamir's secret sharing to compute and arbitrary
  /// value is working.
  #[test]
@@ -1417,7 +1441,7 @@ index 0676f61..73694f6 100644
  }
  
  #[test]
-@@ -252,7 +253,7 @@ fn check_share_generation_fails_with_invalid_min_signers() {
+@@ -271,7 +273,7 @@ fn check_share_generation_fails_with_invalid_min_signers() {
      let error = Error::InvalidMinSigners;
  
      frost_core::tests::ciphersuite_generic::check_share_generation_fails_with_invalid_signers::<
@@ -1426,7 +1450,7 @@ index 0676f61..73694f6 100644
          _,
      >(min_signers, max_signers, error, rng);
  }
-@@ -263,10 +264,10 @@ fn check_share_generation_fails_with_min_signers_greater_than_max() {
+@@ -282,10 +284,10 @@ fn check_share_generation_fails_with_min_signers_greater_than_max() {
  
      let min_signers = 3;
      let max_signers = 2;
@@ -1439,7 +1463,7 @@ index 0676f61..73694f6 100644
          _,
      >(min_signers, max_signers, error, rng);
  }
-@@ -280,7 +281,7 @@ fn check_share_generation_fails_with_invalid_max_signers() {
+@@ -299,7 +301,7 @@ fn check_share_generation_fails_with_invalid_max_signers() {
      let error = Error::InvalidMaxSigners;
  
      frost_core::tests::ciphersuite_generic::check_share_generation_fails_with_invalid_signers::<
@@ -1448,7 +1472,7 @@ index 0676f61..73694f6 100644
          _,
      >(min_signers, max_signers, error, rng);
  }
-@@ -299,29 +300,29 @@ lazy_static! {
+@@ -318,29 +320,29 @@ lazy_static! {
  
  #[test]
  fn check_sign_with_test_vectors() {
@@ -1483,7 +1507,7 @@ index 0676f61..73694f6 100644
  }
  
  // Explicit test which is used in a documentation snippet
-@@ -340,7 +341,7 @@ fn check_sign_with_dealer_and_identifiers() {
+@@ -359,7 +361,7 @@ fn check_sign_with_dealer_and_identifiers() {
      let rng = rand::rngs::OsRng;
  
      frost_core::tests::ciphersuite_generic::check_sign_with_dealer_and_identifiers::<
@@ -1492,7 +1516,7 @@ index 0676f61..73694f6 100644
          _,
      >(rng);
  }
-@@ -348,16 +349,17 @@ fn check_sign_with_dealer_and_identifiers() {
+@@ -367,16 +369,17 @@ fn check_sign_with_dealer_and_identifiers() {
  #[test]
  fn check_sign_with_missing_identifier() {
      let rng = rand::rngs::OsRng;
@@ -2313,5 +2337,5 @@ index 8a420fc..6a390a8 100644
              ],
          ),
 -- 
-2.34.1
+2.50.1
 

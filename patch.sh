@@ -3,7 +3,7 @@ set -ex
 
 export LANG="en_US.UTF-8"
 COMMIT_DATE="$(date)"
-# COMMIT_HASH="a8c8b6d197bd818e23fc8fcfc457144a909872e0"
+# COMMIT_HASH="3ffc19d8f473d5bc4e07ed41bc884bdb42d6c29f"
 
 rm -rf frost
 git clone git@github.com:ZcashFoundation/frost.git
@@ -23,7 +23,7 @@ git commit --message "chore: \`git checkout frost-secp256k1\`"
 git am ../0002-fix-add-missing-stuff-to-frost-secp256k1.patch
 git commit --amend --no-edit --date "$COMMIT_DATE"
 
-git am ../0003-feat-bump-MSRV-to-1.81-make-all-crates-no_std.patch
+git am ../0003-feat-frost-ed448-add-no_std-support.patch
 git commit --amend --no-edit --date "$COMMIT_DATE"
 
 git am ../0004-feat-frost-core-simplify-trait-bounds-don-t-use-the-allocator-in-some-places.patch
