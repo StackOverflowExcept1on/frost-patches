@@ -1,7 +1,7 @@
-From fbf5ace144bca88305d8f9f3ebaa7a6275b52b3c Mon Sep 17 00:00:00 2001
+From 5b1b2a9768a4880c73b4d93bffd7adeb81e39931 Mon Sep 17 00:00:00 2001
 From: StackOverflowExcept1on
  <109800286+StackOverflowExcept1on@users.noreply.github.com>
-Date: Fri, 24 Apr 2026 12:01:15 +0300
+Date: Fri, 24 Apr 2026 14:18:15 +0300
 Subject: [PATCH] feat: add `frost-secp256k1-evm` crate
 
 ---
@@ -20,14 +20,14 @@ Subject: [PATCH] feat: add `frost-secp256k1-evm` crate
  frost-core/CHANGELOG.md                       |  3 +
  .../CHANGELOG.md                              |  0
  .../Cargo.toml                                |  6 +-
- .../README.md                                 |  4 +-
+ .../README.md                                 |  8 +-
  .../benches/bench.rs                          |  6 +-
  .../dkg.md                                    |  2 +-
  .../src/keys/dkg.rs                           |  0
  .../src/keys/refresh.rs                       |  0
  .../src/keys/repairable.rs                    | 20 +++--
  .../src/lib.rs                                | 62 ++++++-------
- .../src/rerandomized.rs                       |  0
+ .../src/rerandomized.rs                       | 10 +--
  .../src/tests.rs                              |  0
  frost-secp256k1-evm/src/tests/batch.rs        | 22 +++++
  .../src/tests/coefficient_commitment.rs       |  8 +-
@@ -43,7 +43,7 @@ Subject: [PATCH] feat: add `frost-secp256k1-evm` crate
  .../tests/helpers/vectors-big-identifier.json | 60 ++++++-------
  .../tests/helpers/vectors.json                | 77 +++++++++++++++++
  .../tests/helpers/vectors_dkg.json            | 51 +++++++++++
- .../tests/integration_tests.rs                | 82 +++++++++---------
+ .../tests/integration_tests.rs                | 84 +++++++++---------
  .../tests/recreation_tests.rs                 |  2 +-
  .../tests/rerandomized_tests.rs               |  4 +-
  .../tests/serde_tests.rs                      | 86 +++++++++----------
@@ -66,21 +66,21 @@ Subject: [PATCH] feat: add `frost-secp256k1-evm` crate
  ...round2_package_postcard_serialization.snap |  5 --
  ...igning_package_postcard_serialization.snap |  5 --
  gencode/src/main.rs                           | 16 ++--
- 61 files changed, 414 insertions(+), 398 deletions(-)
+ 61 files changed, 422 insertions(+), 406 deletions(-)
  create mode 100644 book/src/user/frost-secp256k1-evm.md
  create mode 100644 book/src/user/frost-secp256k1-evm/dkg.md
  delete mode 100644 book/src/user/frost-secp256k1.md
  delete mode 100644 book/src/user/frost-secp256k1/dkg.md
  rename {frost-secp256k1 => frost-secp256k1-evm}/CHANGELOG.md (100%)
  rename {frost-secp256k1 => frost-secp256k1-evm}/Cargo.toml (93%)
- rename {frost-secp256k1 => frost-secp256k1-evm}/README.md (97%)
+ rename {frost-secp256k1 => frost-secp256k1-evm}/README.md (93%)
  rename {frost-secp256k1 => frost-secp256k1-evm}/benches/bench.rs (62%)
  rename {frost-secp256k1 => frost-secp256k1-evm}/dkg.md (99%)
  rename {frost-secp256k1 => frost-secp256k1-evm}/src/keys/dkg.rs (100%)
  rename {frost-secp256k1 => frost-secp256k1-evm}/src/keys/refresh.rs (100%)
  rename {frost-secp256k1 => frost-secp256k1-evm}/src/keys/repairable.rs (88%)
  rename {frost-secp256k1 => frost-secp256k1-evm}/src/lib.rs (88%)
- rename {frost-secp256k1 => frost-secp256k1-evm}/src/rerandomized.rs (100%)
+ rename {frost-secp256k1 => frost-secp256k1-evm}/src/rerandomized.rs (92%)
  rename {frost-secp256k1 => frost-secp256k1-evm}/src/tests.rs (100%)
  create mode 100644 frost-secp256k1-evm/src/tests/batch.rs
  rename {frost-secp256k1 => frost-secp256k1-evm}/src/tests/coefficient_commitment.rs (90%)
@@ -96,7 +96,7 @@ Subject: [PATCH] feat: add `frost-secp256k1-evm` crate
  rename {frost-secp256k1 => frost-secp256k1-evm}/tests/helpers/vectors-big-identifier.json (92%)
  create mode 100644 frost-secp256k1-evm/tests/helpers/vectors.json
  create mode 100644 frost-secp256k1-evm/tests/helpers/vectors_dkg.json
- rename {frost-secp256k1 => frost-secp256k1-evm}/tests/integration_tests.rs (85%)
+ rename {frost-secp256k1 => frost-secp256k1-evm}/tests/integration_tests.rs (84%)
  rename {frost-secp256k1 => frost-secp256k1-evm}/tests/recreation_tests.rs (99%)
  rename {frost-secp256k1 => frost-secp256k1-evm}/tests/rerandomized_tests.rs (71%)
  rename {frost-secp256k1 => frost-secp256k1-evm}/tests/serde_tests.rs (90%)
@@ -360,18 +360,28 @@ index 8d94271..3c6a36d 100644
  [dev-dependencies]
  criterion.workspace = true
 diff --git a/frost-secp256k1/README.md b/frost-secp256k1-evm/README.md
-similarity index 97%
+similarity index 93%
 rename from frost-secp256k1/README.md
 rename to frost-secp256k1-evm/README.md
-index c65e578..9a51763 100644
+index c65e578..bd0160b 100644
 --- a/frost-secp256k1/README.md
 +++ b/frost-secp256k1-evm/README.md
-@@ -1,4 +1,4 @@
+@@ -1,12 +1,12 @@
 -An implementation of Schnorr signatures on the secp256k1 curve for both single and threshold numbers
 +An implementation of Schnorr signatures on the secp256k1 curve (EVM) for both single and threshold numbers
  of signers (FROST).
  
  This crate is a re-export of the ciphersuite-generic
+ [frost-core](https://crates.io/crates/frost-core) crate, parametrized with the
+-secp256k1 curve. For more details, refer to [The ZF FROST
++secp256k1 curve (EVM). For more details, refer to [The ZF FROST
+ Book](https://frost.zfnd.org/).
+ 
+-*This crate is not compatible with Bitcoin BIP-340 (Taproot) signatures. Use [frost-secp256k1-tr](https://crates.io/crates/frost-secp256k1-tr) instead*
++<!-- PLACEHOLDER -->
+ 
+ ## Example: key generation with trusted dealer and FROST signing
+ 
 @@ -17,7 +17,7 @@ scenario in a single thread and it abstracts away any communication between peer
  
  ```rust
@@ -732,9 +742,49 @@ index bebcd1f..900dc64 100644
 +/// A valid verifying key for Schnorr signatures on FROST(secp256k1, KECCAK-256).
  pub type VerifyingKey = frost_core::VerifyingKey<S>;
 diff --git a/frost-secp256k1/src/rerandomized.rs b/frost-secp256k1-evm/src/rerandomized.rs
-similarity index 100%
+similarity index 92%
 rename from frost-secp256k1/src/rerandomized.rs
 rename to frost-secp256k1-evm/src/rerandomized.rs
+index 7f7fc93..32de6dc 100644
+--- a/frost-secp256k1/src/rerandomized.rs
++++ b/frost-secp256k1-evm/src/rerandomized.rs
+@@ -12,7 +12,7 @@ pub fn sign_with_randomizer_seed(
+     key_package: &crate::keys::KeyPackage,
+     randomizer_seed: &[u8],
+ ) -> Result<crate::round2::SignatureShare, crate::Error> {
+-    frost_rerandomized::sign_with_randomizer_seed::<crate::Secp256K1Sha256>(
++    frost_rerandomized::sign_with_randomizer_seed::<crate::Secp256K1Keccak256>(
+         signing_package,
+         signer_nonces,
+         key_package,
+@@ -30,7 +30,7 @@ pub fn aggregate(
+     pubkeys: &crate::keys::PublicKeyPackage,
+     randomized_params: &RandomizedParams,
+ ) -> Result<crate::Signature, crate::Error> {
+-    frost_rerandomized::aggregate::<crate::Secp256K1Sha256>(
++    frost_rerandomized::aggregate::<crate::Secp256K1Keccak256>(
+         signing_package,
+         signature_shares,
+         pubkeys,
+@@ -49,7 +49,7 @@ pub fn aggregate_custom(
+     cheater_detection: crate::CheaterDetection,
+     randomized_params: &RandomizedParams,
+ ) -> Result<crate::Signature, crate::Error> {
+-    frost_rerandomized::aggregate_custom::<crate::Secp256K1Sha256>(
++    frost_rerandomized::aggregate_custom::<crate::Secp256K1Keccak256>(
+         signing_package,
+         signature_shares,
+         pubkeys,
+@@ -59,7 +59,7 @@ pub fn aggregate_custom(
+ }
+ 
+ /// A randomizer. A random scalar which is used to randomize the key.
+-pub type Randomizer = frost_rerandomized::Randomizer<crate::Secp256K1Sha256>;
++pub type Randomizer = frost_rerandomized::Randomizer<crate::Secp256K1Keccak256>;
+ 
+ /// Randomized parameters for a signing instance of randomized FROST.
+-pub type RandomizedParams = frost_rerandomized::RandomizedParams<crate::Secp256K1Sha256>;
++pub type RandomizedParams = frost_rerandomized::RandomizedParams<crate::Secp256K1Keccak256>;
 diff --git a/frost-secp256k1/src/tests.rs b/frost-secp256k1-evm/src/tests.rs
 similarity index 100%
 rename from frost-secp256k1/src/tests.rs
@@ -1252,10 +1302,10 @@ index 0000000..0af7fec
 +    }
 +  }
 diff --git a/frost-secp256k1/tests/integration_tests.rs b/frost-secp256k1-evm/tests/integration_tests.rs
-similarity index 85%
+similarity index 84%
 rename from frost-secp256k1/tests/integration_tests.rs
 rename to frost-secp256k1-evm/tests/integration_tests.rs
-index 343214e..b9132c4 100644
+index 343214e..d22d3f9 100644
 --- a/frost-secp256k1/tests/integration_tests.rs
 +++ b/frost-secp256k1-evm/tests/integration_tests.rs
 @@ -1,17 +1,17 @@
@@ -1419,9 +1469,12 @@ index 343214e..b9132c4 100644
          _,
      >(min_signers, max_signers, error, rng);
  }
-@@ -176,7 +178,7 @@ fn check_sign_with_dealer_fails_with_invalid_max_signers() {
+@@ -174,9 +176,9 @@ fn check_sign_with_dealer_fails_with_invalid_max_signers() {
+ /// This is testing that Shamir's secret sharing to compute and arbitrary
+ /// value is working.
  #[test]
- fn check_share_generation_secp256k1_sha256() {
+-fn check_share_generation_secp256k1_sha256() {
++fn check_share_generation_secp256k1_evm_keccak256() {
      let rng = rand::rngs::OsRng;
 -    frost_core::tests::ciphersuite_generic::check_share_generation::<Secp256K1Sha256, _>(rng);
 +    frost_core::tests::ciphersuite_generic::check_share_generation::<Secp256K1Keccak256, _>(rng);
