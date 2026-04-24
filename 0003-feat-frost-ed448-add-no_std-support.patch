@@ -1,22 +1,23 @@
-From aa71b48da41056675596c7e062b22de4a095dec5 Mon Sep 17 00:00:00 2001
+From b47af87d359d0133e2ccb7c8ed751ff5221b4cf3 Mon Sep 17 00:00:00 2001
 From: StackOverflowExcept1on
  <109800286+StackOverflowExcept1on@users.noreply.github.com>
-Date: Fri, 29 Aug 2025 18:30:39 +0300
+Date: Fri, 24 Apr 2026 12:44:19 +0300
 Subject: [PATCH] feat(frost-ed448): add `#![no_std]` support
 
 ---
- .github/workflows/main.yml           |  3 +--
- frost-core/CHANGELOG.md              |  2 ++
- frost-ed448/Cargo.toml               |  2 +-
- frost-ed448/src/lib.rs               | 31 ++++++++++++++--------------
- frost-ed448/src/tests/deserialize.rs |  6 +++---
- 5 files changed, 23 insertions(+), 21 deletions(-)
+ .github/workflows/main.yml           |   3 +-
+ Cargo.lock                           | 101 +++++++++++++++++++++++----
+ frost-core/CHANGELOG.md              |   2 +
+ frost-ed448/Cargo.toml               |   2 +-
+ frost-ed448/src/lib.rs               |  33 +++++----
+ frost-ed448/src/tests/deserialize.rs |   6 +-
+ 6 files changed, 113 insertions(+), 34 deletions(-)
 
 diff --git a/.github/workflows/main.yml b/.github/workflows/main.yml
-index 16d59a0..77f6a63 100644
+index b4f2a9a..de6b9cf 100644
 --- a/.github/workflows/main.yml
 +++ b/.github/workflows/main.yml
-@@ -60,10 +60,9 @@ jobs:
+@@ -69,10 +69,9 @@ jobs:
    build_no_std:
      name: build with no_std
      runs-on: ubuntu-latest
@@ -26,23 +27,242 @@ index 16d59a0..77f6a63 100644
 -        crate: [ristretto255, ed25519, p256, secp256k1, secp256k1-evm, secp256k1-tr, rerandomized]
 +        crate: [ed448, ristretto255, ed25519, p256, secp256k1, secp256k1-evm, secp256k1-tr, rerandomized]
      steps:
-     - uses: actions/checkout@v4.2.2
+     - uses: actions/checkout@v6.0.2
      - uses: dtolnay/rust-toolchain@master
+diff --git a/Cargo.lock b/Cargo.lock
+index e840c8e..f0f5911 100644
+--- a/Cargo.lock
++++ b/Cargo.lock
+@@ -93,6 +93,18 @@ version = "2.10.0"
+ source = "registry+https://github.com/rust-lang/crates.io-index"
+ checksum = "812e12b5285cc515a9c72a5c1d3b6d46a19dac5acfef5265968c166106e31dd3"
+ 
++[[package]]
++name = "bitvec"
++version = "1.0.1"
++source = "registry+https://github.com/rust-lang/crates.io-index"
++checksum = "1bc2832c24239b0141d5674bb9174f9d68a8b5b3f2753311927c172ca46f7e9c"
++dependencies = [
++ "funty",
++ "radium",
++ "tap",
++ "wyz",
++]
++
+ [[package]]
+ name = "block-buffer"
+ version = "0.10.4"
+@@ -331,7 +343,7 @@ dependencies = [
+  "cpufeatures",
+  "curve25519-dalek-derive",
+  "digest",
+- "fiat-crypto 0.2.9",
++ "fiat-crypto",
+  "rand_core 0.6.4",
+  "rustc_version",
+  "serde",
+@@ -363,6 +375,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
+ checksum = "e7c1832837b905bbfb5101e07cc24c8deddf52f93225eee6ead5f4d63d53ddcb"
+ dependencies = [
+  "const-oid",
++ "pem-rfc7468",
+  "zeroize",
+ ]
+ 
+@@ -421,15 +434,17 @@ dependencies = [
+ ]
+ 
+ [[package]]
+-name = "ed448-goldilocks"
+-version = "0.9.0"
++name = "ed448-goldilocks-plus"
++version = "0.16.0"
+ source = "registry+https://github.com/rust-lang/crates.io-index"
+-checksum = "88322282bccdc6fa7ab65b0c30cb877fba541547653436d08bb775fa4a4307b4"
++checksum = "3689f7a47d1a75cd7483b8df8c4a0d5bea3bfc2ec41ef6e02e75123ef980bdf6"
+ dependencies = [
+- "fiat-crypto 0.1.20",
+- "hex",
++ "crypto-bigint",
++ "elliptic-curve",
+  "rand_core 0.6.4",
++ "sha3",
+  "subtle",
++ "zeroize",
+ ]
+ 
+ [[package]]
+@@ -445,14 +460,20 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
+ checksum = "b5e6043086bf7973472e0c7dff2142ea0b680d30e18d9cc40f267efbf222bd47"
+ dependencies = [
+  "base16ct",
++ "base64ct",
+  "crypto-bigint",
+  "digest",
+  "ff",
+  "generic-array",
+  "group",
++ "pem-rfc7468",
++ "pkcs8",
+  "rand_core 0.6.4",
+  "sec1",
++ "serde_json",
++ "serdect",
+  "subtle",
++ "tap",
+  "zeroize",
+ ]
+ 
+@@ -496,16 +517,11 @@ version = "0.13.1"
+ source = "registry+https://github.com/rust-lang/crates.io-index"
+ checksum = "c0b50bfb653653f9ca9095b427bed08ab8d75a137839d9ad64eb11810d5b6393"
+ dependencies = [
++ "bitvec",
+  "rand_core 0.6.4",
+  "subtle",
+ ]
+ 
+-[[package]]
+-name = "fiat-crypto"
+-version = "0.1.20"
+-source = "registry+https://github.com/rust-lang/crates.io-index"
+-checksum = "e825f6987101665dea6ec934c09ec6d721de7bc1bf92248e1d5810c8cd636b77"
+-
+ [[package]]
+ name = "fiat-crypto"
+ version = "0.2.9"
+@@ -580,7 +596,7 @@ version = "3.0.0"
+ dependencies = [
+  "criterion",
+  "document-features",
+- "ed448-goldilocks",
++ "ed448-goldilocks-plus",
+  "frost-core",
+  "frost-rerandomized",
+  "hex",
+@@ -649,6 +665,27 @@ dependencies = [
+  "tokio",
+ ]
+ 
++[[package]]
++name = "frost-secp256k1"
++version = "3.0.0"
++dependencies = [
++ "criterion",
++ "document-features",
++ "frost-core",
++ "frost-rerandomized",
++ "hex",
++ "insta",
++ "k256",
++ "lazy_static",
++ "proptest",
++ "rand 0.8.5",
++ "rand_chacha 0.3.1",
++ "rand_core 0.6.4",
++ "serde_json",
++ "sha2",
++ "tokio",
++]
++
+ [[package]]
+ name = "frost-secp256k1-evm"
+ version = "3.0.0"
+@@ -692,6 +729,12 @@ dependencies = [
+  "tokio",
+ ]
+ 
++[[package]]
++name = "funty"
++version = "2.0.0"
++source = "registry+https://github.com/rust-lang/crates.io-index"
++checksum = "e6d5a32815ae3f33302d95fdcb2ce17862f8c65363dcfd29360480ba1001fc9c"
++
+ [[package]]
+ name = "gencode"
+ version = "0.1.0"
+@@ -939,6 +982,15 @@ dependencies = [
+  "primeorder",
+ ]
+ 
++[[package]]
++name = "pem-rfc7468"
++version = "0.7.0"
++source = "registry+https://github.com/rust-lang/crates.io-index"
++checksum = "88b39c9bfcfc231068454382784bb460aae594343fb030d46e9f50a645418412"
++dependencies = [
++ "base64ct",
++]
++
+ [[package]]
+ name = "pin-project-lite"
+ version = "0.2.16"
+@@ -1063,6 +1115,12 @@ version = "5.3.0"
+ source = "registry+https://github.com/rust-lang/crates.io-index"
+ checksum = "69cdb34c158ceb288df11e18b4bd39de994f6657d83847bdffdbd7f346754b0f"
+ 
++[[package]]
++name = "radium"
++version = "0.7.0"
++source = "registry+https://github.com/rust-lang/crates.io-index"
++checksum = "dc33ff2d4973d518d823d61aa239014831e521c75da58e3df4840d3f47749d09"
++
+ [[package]]
+ name = "rand"
+ version = "0.8.5"
+@@ -1244,6 +1302,8 @@ dependencies = [
+  "base16ct",
+  "der",
+  "generic-array",
++ "pkcs8",
++ "serdect",
+  "subtle",
+  "zeroize",
+ ]
+@@ -1411,6 +1471,12 @@ dependencies = [
+  "unicode-ident",
+ ]
+ 
++[[package]]
++name = "tap"
++version = "1.0.1"
++source = "registry+https://github.com/rust-lang/crates.io-index"
++checksum = "55937e1799185b12863d447f42597ed69d9928686b8d88a1df17376a097d8369"
++
+ [[package]]
+ name = "tempfile"
+ version = "3.24.0"
+@@ -1629,6 +1695,15 @@ version = "0.51.0"
+ source = "registry+https://github.com/rust-lang/crates.io-index"
+ checksum = "d7249219f66ced02969388cf2bb044a09756a083d0fab1e566056b04d9fbcaa5"
+ 
++[[package]]
++name = "wyz"
++version = "0.5.1"
++source = "registry+https://github.com/rust-lang/crates.io-index"
++checksum = "05f360fc0b24296329c78fda852a1e9ae82de9cf7b27dae4b7f62f118f77b9ed"
++dependencies = [
++ "tap",
++]
++
+ [[package]]
+ name = "zerocopy"
+ version = "0.8.35"
 diff --git a/frost-core/CHANGELOG.md b/frost-core/CHANGELOG.md
-index 995fc97..8ff024f 100644
+index 2412440..fc52408 100644
 --- a/frost-core/CHANGELOG.md
 +++ b/frost-core/CHANGELOG.md
-@@ -6,6 +6,8 @@ Entries are listed in reverse chronological order.
+@@ -7,6 +7,8 @@ Entries are listed in reverse chronological order.
  
  * Added a new ciphersuite `frost-secp256k1-evm` that uses the secp256k1
    elliptic curve with hash keccak256.
 +* Added no-std support for frost-ed448 crate. This became possible after migration to `ed448-goldilocks-plus` (fork of
 +  `ed448-goldilocks`).
  
- ## 2.2.0
+ ## 3.0.0
  
 diff --git a/frost-ed448/Cargo.toml b/frost-ed448/Cargo.toml
-index 4d834fe..79bbc6e 100644
+index 5c26e30..e8c7d9c 100644
 --- a/frost-ed448/Cargo.toml
 +++ b/frost-ed448/Cargo.toml
 @@ -17,7 +17,7 @@ rustdoc-args = ["--cfg", "docsrs"]
@@ -55,15 +275,15 @@ index 4d834fe..79bbc6e 100644
  frost-rerandomized.workspace = true
  rand_core.workspace = true
 diff --git a/frost-ed448/src/lib.rs b/frost-ed448/src/lib.rs
-index 2acc590..1ee8e0b 100644
+index 154f445..49afca6 100644
 --- a/frost-ed448/src/lib.rs
 +++ b/frost-ed448/src/lib.rs
 @@ -1,3 +1,4 @@
 +#![no_std]
  #![allow(non_snake_case)]
  #![deny(missing_docs)]
- #![cfg_attr(docsrs, feature(doc_auto_cfg))]
-@@ -9,9 +10,8 @@ extern crate alloc;
+ #![cfg_attr(docsrs, feature(doc_cfg))]
+@@ -8,9 +9,8 @@ extern crate alloc;
  
  use alloc::collections::BTreeMap;
  
@@ -75,7 +295,7 @@ index 2acc590..1ee8e0b 100644
  };
  use frost_rerandomized::RandomizedCiphersuite;
  use rand_core::{CryptoRng, RngCore};
-@@ -44,11 +44,11 @@ impl Field for Ed448ScalarField {
+@@ -43,11 +43,11 @@ impl Field for Ed448ScalarField {
      type Serialization = [u8; 57];
  
      fn zero() -> Self::Scalar {
@@ -89,7 +309,7 @@ index 2acc590..1ee8e0b 100644
      }
  
      fn invert(scalar: &Self::Scalar) -> Result<Self::Scalar, FieldError> {
-@@ -64,11 +64,11 @@ impl Field for Ed448ScalarField {
+@@ -63,11 +63,12 @@ impl Field for Ed448ScalarField {
      }
  
      fn serialize(scalar: &Self::Scalar) -> Self::Serialization {
@@ -99,11 +319,12 @@ index 2acc590..1ee8e0b 100644
  
      fn deserialize(buf: &Self::Serialization) -> Result<Self::Scalar, FieldError> {
 -        match Scalar::from_canonical_bytes(*buf) {
++        #[allow(deprecated)]
 +        match Scalar::from_canonical_bytes(ScalarBytes::from_slice(buf)).into() {
              Some(s) => Ok(s),
              None => Err(FieldError::MalformedScalar),
          }
-@@ -86,20 +86,20 @@ pub struct Ed448Group;
+@@ -85,20 +86,20 @@ pub struct Ed448Group;
  impl Group for Ed448Group {
      type Field = Ed448ScalarField;
  
@@ -128,7 +349,7 @@ index 2acc590..1ee8e0b 100644
      }
  
      fn serialize(element: &Self::Element) -> Result<Self::Serialization, GroupError> {
-@@ -111,11 +111,11 @@ impl Group for Ed448Group {
+@@ -110,11 +111,11 @@ impl Group for Ed448Group {
  
      fn deserialize(buf: &Self::Serialization) -> Result<Self::Element, GroupError> {
          let compressed = CompressedEdwardsY(*buf);
@@ -142,13 +363,14 @@ index 2acc590..1ee8e0b 100644
                      // decompress() does not check for canonicality, so we
                      // check by recompressing and comparing
                      if point.compress().0 != compressed.0 {
-@@ -144,8 +144,9 @@ fn hash_to_array(inputs: &[&[u8]]) -> [u8; 114] {
+@@ -143,8 +144,10 @@ fn hash_to_array(inputs: &[&[u8]]) -> [u8; 114] {
  }
  
  fn hash_to_scalar(inputs: &[&[u8]]) -> Scalar {
 -    let output = hash_to_array(inputs);
 -    Scalar::from_bytes_mod_order_wide(&output)
 +    let temp = hash_to_array(inputs);
++    #[allow(deprecated)]
 +    let output = WideScalarBytes::from_slice(&temp);
 +    Scalar::from_bytes_mod_order_wide(output)
  }
@@ -181,5 +403,5 @@ index 6c86b77..e887334 100644
      let r = <Ed448Shake256 as Ciphersuite>::Group::deserialize(&encoded_identity);
      assert_eq!(r, Err(GroupError::InvalidIdentityElement));
 -- 
-2.50.1
+2.51.0
 

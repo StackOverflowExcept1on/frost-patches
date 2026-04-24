@@ -1,11 +1,12 @@
-From 3e8f20df64d736229f2b60b4a1981ce7a79f4765 Mon Sep 17 00:00:00 2001
+From fbf5ace144bca88305d8f9f3ebaa7a6275b52b3c Mon Sep 17 00:00:00 2001
 From: StackOverflowExcept1on
  <109800286+StackOverflowExcept1on@users.noreply.github.com>
-Date: Fri, 29 Aug 2025 18:01:26 +0300
+Date: Fri, 24 Apr 2026 12:01:15 +0300
 Subject: [PATCH] feat: add `frost-secp256k1-evm` crate
 
 ---
  .github/workflows/main.yml                    |  2 +-
+ Cargo.lock                                    |  4 +-
  Cargo.toml                                    |  2 +-
  README.md                                     | 22 ++---
  book/src/dev/frost-dependencies-for-audit.md  |  1 +
@@ -16,15 +17,17 @@ Subject: [PATCH] feat: add `frost-secp256k1-evm` crate
  book/src/user/frost-secp256k1-evm/dkg.md      |  1 +
  book/src/user/frost-secp256k1.md              |  1 -
  book/src/user/frost-secp256k1/dkg.md          |  1 -
- frost-core/CHANGELOG.md                       |  5 +
+ frost-core/CHANGELOG.md                       |  3 +
+ .../CHANGELOG.md                              |  0
  .../Cargo.toml                                |  6 +-
  .../README.md                                 |  4 +-
  .../benches/bench.rs                          |  6 +-
  .../dkg.md                                    |  2 +-
  .../src/keys/dkg.rs                           |  0
  .../src/keys/refresh.rs                       |  0
- .../src/keys/repairable.rs                    | 16 ++--
- .../src/lib.rs                                | 62 ++++++------
+ .../src/keys/repairable.rs                    | 20 +++--
+ .../src/lib.rs                                | 62 ++++++-------
+ .../src/rerandomized.rs                       |  0
  .../src/tests.rs                              |  0
  frost-secp256k1-evm/src/tests/batch.rs        | 22 +++++
  .../src/tests/coefficient_commitment.rs       |  8 +-
@@ -37,44 +40,47 @@ Subject: [PATCH] feat: add `frost-secp256k1-evm` crate
  .../tests/helpers/repair-share.json           |  0
  .../tests/helpers/samples.json                |  0
  .../tests/helpers/samples.rs                  |  4 +-
- .../tests/helpers/vectors-big-identifier.json | 60 ++++++------
- .../tests/helpers/vectors.json                | 77 +++++++++++++++
- .../tests/helpers/vectors_dkg.json            | 51 ++++++++++
- .../tests/integration_tests.rs                | 95 ++++++++++---------
+ .../tests/helpers/vectors-big-identifier.json | 60 ++++++-------
+ .../tests/helpers/vectors.json                | 77 +++++++++++++++++
+ .../tests/helpers/vectors_dkg.json            | 51 +++++++++++
+ .../tests/integration_tests.rs                | 82 +++++++++---------
  .../tests/recreation_tests.rs                 |  2 +-
  .../tests/rerandomized_tests.rs               |  4 +-
- .../tests/serde_tests.rs                      | 84 ++++++++--------
+ .../tests/serde_tests.rs                      | 86 +++++++++----------
  .../tests/serialization_tests.rs              |  2 +-
  ...ck_key_package_postcard_serialization.snap |  4 +-
+ ...ey_package_new_postcard_serialization.snap |  4 +-
  ...ic_key_package_postcard_serialization.snap |  4 +-
  ...round1_package_postcard_serialization.snap |  4 +-
  ...secret_package_postcard_serialization.snap |  2 +-
- ...round2_package_postcard_serialization.snap |  5 +
+ ...round2_package_postcard_serialization.snap |  5 ++
  ...secret_package_postcard_serialization.snap |  2 +-
  ...k_secret_share_postcard_serialization.snap |  4 +-
  ...ignature_share_postcard_serialization.snap |  2 +-
  ...ng_commitments_postcard_serialization.snap |  4 +-
  ...signing_nonces_postcard_serialization.snap |  4 +-
- ...igning_package_postcard_serialization.snap |  5 +
+ ...igning_package_postcard_serialization.snap |  5 ++
  frost-secp256k1/src/tests/batch.rs            | 22 -----
- frost-secp256k1/tests/helpers/vectors.json    | 77 ---------------
- .../tests/helpers/vectors_dkg.json            | 51 ----------
- ...round2_package_postcard_serialization.snap |  5 -
- ...igning_package_postcard_serialization.snap |  5 -
- gencode/src/main.rs                           | 14 +--
- 57 files changed, 414 insertions(+), 397 deletions(-)
+ frost-secp256k1/tests/helpers/vectors.json    | 77 -----------------
+ .../tests/helpers/vectors_dkg.json            | 51 -----------
+ ...round2_package_postcard_serialization.snap |  5 --
+ ...igning_package_postcard_serialization.snap |  5 --
+ gencode/src/main.rs                           | 16 ++--
+ 61 files changed, 414 insertions(+), 398 deletions(-)
  create mode 100644 book/src/user/frost-secp256k1-evm.md
  create mode 100644 book/src/user/frost-secp256k1-evm/dkg.md
  delete mode 100644 book/src/user/frost-secp256k1.md
  delete mode 100644 book/src/user/frost-secp256k1/dkg.md
- rename {frost-secp256k1 => frost-secp256k1-evm}/Cargo.toml (94%)
+ rename {frost-secp256k1 => frost-secp256k1-evm}/CHANGELOG.md (100%)
+ rename {frost-secp256k1 => frost-secp256k1-evm}/Cargo.toml (93%)
  rename {frost-secp256k1 => frost-secp256k1-evm}/README.md (97%)
  rename {frost-secp256k1 => frost-secp256k1-evm}/benches/bench.rs (62%)
  rename {frost-secp256k1 => frost-secp256k1-evm}/dkg.md (99%)
  rename {frost-secp256k1 => frost-secp256k1-evm}/src/keys/dkg.rs (100%)
  rename {frost-secp256k1 => frost-secp256k1-evm}/src/keys/refresh.rs (100%)
- rename {frost-secp256k1 => frost-secp256k1-evm}/src/keys/repairable.rs (90%)
+ rename {frost-secp256k1 => frost-secp256k1-evm}/src/keys/repairable.rs (88%)
  rename {frost-secp256k1 => frost-secp256k1-evm}/src/lib.rs (88%)
+ rename {frost-secp256k1 => frost-secp256k1-evm}/src/rerandomized.rs (100%)
  rename {frost-secp256k1 => frost-secp256k1-evm}/src/tests.rs (100%)
  create mode 100644 frost-secp256k1-evm/src/tests/batch.rs
  rename {frost-secp256k1 => frost-secp256k1-evm}/src/tests/coefficient_commitment.rs (90%)
@@ -93,9 +99,10 @@ Subject: [PATCH] feat: add `frost-secp256k1-evm` crate
  rename {frost-secp256k1 => frost-secp256k1-evm}/tests/integration_tests.rs (85%)
  rename {frost-secp256k1 => frost-secp256k1-evm}/tests/recreation_tests.rs (99%)
  rename {frost-secp256k1 => frost-secp256k1-evm}/tests/rerandomized_tests.rs (71%)
- rename {frost-secp256k1 => frost-secp256k1-evm}/tests/serde_tests.rs (89%)
+ rename {frost-secp256k1 => frost-secp256k1-evm}/tests/serde_tests.rs (90%)
  rename {frost-secp256k1 => frost-secp256k1-evm}/tests/serialization_tests.rs (99%)
  rename {frost-secp256k1 => frost-secp256k1-evm}/tests/snapshots/serialization_tests__check_key_package_postcard_serialization.snap (67%)
+ rename {frost-secp256k1 => frost-secp256k1-evm}/tests/snapshots/serialization_tests__check_public_key_package_new_postcard_serialization.snap (61%)
  rename {frost-secp256k1 => frost-secp256k1-evm}/tests/snapshots/serialization_tests__check_public_key_package_postcard_serialization.snap (60%)
  rename {frost-secp256k1 => frost-secp256k1-evm}/tests/snapshots/serialization_tests__check_round1_package_postcard_serialization.snap (60%)
  rename {frost-secp256k1 => frost-secp256k1-evm}/tests/snapshots/serialization_tests__check_round1_secret_package_postcard_serialization.snap (84%)
@@ -113,20 +120,42 @@ Subject: [PATCH] feat: add `frost-secp256k1-evm` crate
  delete mode 100644 frost-secp256k1/tests/snapshots/serialization_tests__check_signing_package_postcard_serialization.snap
 
 diff --git a/.github/workflows/main.yml b/.github/workflows/main.yml
-index 20cbcd7..e8d70e1 100644
+index c263aa9..55d1716 100644
 --- a/.github/workflows/main.yml
 +++ b/.github/workflows/main.yml
-@@ -63,7 +63,7 @@ jobs:
+@@ -72,7 +72,7 @@ jobs:
      # Skip ed448 which does not support it.
      strategy:
        matrix:
 -        crate: [ristretto255, ed25519, p256, secp256k1, secp256k1-tr, rerandomized]
 +        crate: [ristretto255, ed25519, p256, secp256k1-evm, secp256k1-tr, rerandomized]
      steps:
-     - uses: actions/checkout@v4.2.2
+     - uses: actions/checkout@v6.0.2
      - uses: dtolnay/rust-toolchain@master
+diff --git a/Cargo.lock b/Cargo.lock
+index 216200a..e840c8e 100644
+--- a/Cargo.lock
++++ b/Cargo.lock
+@@ -650,7 +650,7 @@ dependencies = [
+ ]
+ 
+ [[package]]
+-name = "frost-secp256k1"
++name = "frost-secp256k1-evm"
+ version = "3.0.0"
+ dependencies = [
+  "criterion",
+@@ -666,7 +666,7 @@ dependencies = [
+  "rand_chacha 0.3.1",
+  "rand_core 0.6.4",
+  "serde_json",
+- "sha2",
++ "sha3",
+  "tokio",
+ ]
+ 
 diff --git a/Cargo.toml b/Cargo.toml
-index ae89d57..97afff1 100644
+index cf479d4..8f78ff7 100644
 --- a/Cargo.toml
 +++ b/Cargo.toml
 @@ -6,7 +6,7 @@ members = [
@@ -139,7 +168,7 @@ index ae89d57..97afff1 100644
      "frost-rerandomized",
      "gencode"
 diff --git a/README.md b/README.md
-index 019b60d..01988c3 100644
+index 0294816..b3278f5 100644
 --- a/README.md
 +++ b/README.md
 @@ -2,16 +2,16 @@
@@ -167,9 +196,9 @@ index 019b60d..01988c3 100644
 +| secp256k1 ciphersuite (Taproot) | [`frost-secp256k1-tr`]  | [![crates.io](https://img.shields.io/crates/v/frost-secp256k1-tr.svg)](https://crates.io/crates/frost-secp256k1-tr)   | [![Documentation](https://docs.rs/frost-secp256k1-tr/badge.svg)](https://docs.rs/frost-secp256k1-tr)   |
 +| Generic Re-randomized FROST     | [`frost-rerandomized`]  | [![crates.io](https://img.shields.io/crates/v/frost-rerandomized.svg)](https://crates.io/crates/frost-rerandomized)   | [![Documentation](https://docs.rs/frost-rerandomized/badge.svg)](https://docs.rs/frost-rerandomized)   |
  
- Rust implementations of ['Two-Round Threshold Schnorr Signatures with FROST'](https://datatracker.ietf.org/doc/draft-irtf-cfrg-frost/).
+ Rust implementations of ['RFC 9591: Two-Round Threshold Schnorr Signatures with FROST'](https://datatracker.ietf.org/doc/rfc9591/).
  
-@@ -60,7 +60,7 @@ of the v0.6.0 release (corresponding to commit 5fa17ed) of the following crates:
+@@ -67,7 +67,7 @@ of the v0.6.0 release (corresponding to commit 5fa17ed) of the following crates:
  - frost-ristretto255
  
  This includes key generation (both trusted dealer and DKG) and FROST signing.
@@ -191,10 +220,10 @@ index 98f8853..5ad4317 100644
  
  ### `frost-core` Dependencies
 diff --git a/book/src/dev/release-checklist.md b/book/src/dev/release-checklist.md
-index 79aac86..b01f1c7 100644
+index 5005edf..748be03 100644
 --- a/book/src/dev/release-checklist.md
 +++ b/book/src/dev/release-checklist.md
-@@ -81,7 +81,7 @@ releases easier.
+@@ -80,7 +80,7 @@ releases easier.
  
  - Publish it with `cargo publish -p frost-rerandomized`
  
@@ -203,7 +232,7 @@ index 79aac86..b01f1c7 100644
  
      - If you get an error like this:
  
-@@ -91,9 +91,9 @@ releases easier.
+@@ -90,9 +90,9 @@ releases easier.
  
  - Draft and publish releases for each of those crates:
  
@@ -215,7 +244,7 @@ index 79aac86..b01f1c7 100644
  
  
  ## Confirm
-@@ -105,7 +105,7 @@ releases easier.
+@@ -104,7 +104,7 @@ releases easier.
      - [Frost ed448](https://crates.io/crates/frost-ed448/versions)
      - [Frost p256](https://crates.io/crates/frost-p256/versions)
      - [Frost ristretto255](https://crates.io/crates/frost-ristretto255/versions)
@@ -225,7 +254,7 @@ index 79aac86..b01f1c7 100644
      - [Frost rerandomized](https://crates.io/crates/frost-rerandomized/versions)
  
 diff --git a/book/src/tutorial.md b/book/src/tutorial.md
-index 15df64c..37c1127 100644
+index 5d86ba5..085bdb7 100644
 --- a/book/src/tutorial.md
 +++ b/book/src/tutorial.md
 @@ -5,7 +5,7 @@ a generic implementation of the protocol, which can't be used directly
@@ -281,26 +310,28 @@ index d91ff24..0000000
 -{{#include ../../../../frost-secp256k1/dkg.md}}
 \ No newline at end of file
 diff --git a/frost-core/CHANGELOG.md b/frost-core/CHANGELOG.md
-index a5f2e42..995fc97 100644
+index 1fcb736..2412440 100644
 --- a/frost-core/CHANGELOG.md
 +++ b/frost-core/CHANGELOG.md
-@@ -2,6 +2,11 @@
+@@ -5,6 +5,9 @@ Entries are listed in reverse chronological order.
  
- Entries are listed in reverse chronological order.
+ ## Unreleased
  
-+## Unreleased
-+
 +* Added a new ciphersuite `frost-secp256k1-evm` that uses the secp256k1
 +  elliptic curve with hash keccak256.
 +
- ## 2.2.0
+ ## 3.0.0
  
- ### Security Fixes
+ Refer to the `3.0.0-rc.0` entry below for the main changes if you are upgrading
+diff --git a/frost-secp256k1/CHANGELOG.md b/frost-secp256k1-evm/CHANGELOG.md
+similarity index 100%
+rename from frost-secp256k1/CHANGELOG.md
+rename to frost-secp256k1-evm/CHANGELOG.md
 diff --git a/frost-secp256k1/Cargo.toml b/frost-secp256k1-evm/Cargo.toml
-similarity index 94%
+similarity index 93%
 rename from frost-secp256k1/Cargo.toml
 rename to frost-secp256k1-evm/Cargo.toml
-index 30e20d5..1a58c54 100644
+index 8d94271..3c6a36d 100644
 --- a/frost-secp256k1/Cargo.toml
 +++ b/frost-secp256k1-evm/Cargo.toml
 @@ -1,5 +1,5 @@
@@ -332,7 +363,7 @@ diff --git a/frost-secp256k1/README.md b/frost-secp256k1-evm/README.md
 similarity index 97%
 rename from frost-secp256k1/README.md
 rename to frost-secp256k1-evm/README.md
-index bdec1ac..9992bd3 100644
+index c65e578..9a51763 100644
 --- a/frost-secp256k1/README.md
 +++ b/frost-secp256k1-evm/README.md
 @@ -1,4 +1,4 @@
@@ -340,8 +371,8 @@ index bdec1ac..9992bd3 100644
 +An implementation of Schnorr signatures on the secp256k1 curve (EVM) for both single and threshold numbers
  of signers (FROST).
  
- ## Example: key generation with trusted dealer and FROST signing
-@@ -10,7 +10,7 @@ scenario in a single thread and it abstracts away any communication between peer
+ This crate is a re-export of the ciphersuite-generic
+@@ -17,7 +17,7 @@ scenario in a single thread and it abstracts away any communication between peer
  
  ```rust
  # // ANCHOR: tkg_gen
@@ -382,10 +413,10 @@ diff --git a/frost-secp256k1/dkg.md b/frost-secp256k1-evm/dkg.md
 similarity index 99%
 rename from frost-secp256k1/dkg.md
 rename to frost-secp256k1-evm/dkg.md
-index 24c6a53..8eccd87 100644
+index 48d7681..1bcd9d2 100644
 --- a/frost-secp256k1/dkg.md
 +++ b/frost-secp256k1-evm/dkg.md
-@@ -28,7 +28,7 @@ they can proceed to sign messages with FROST.
+@@ -21,7 +21,7 @@ first round of communication to ensure all participants have the same value.
  # // ANCHOR: dkg_import
  use std::collections::BTreeMap;
  
@@ -403,31 +434,39 @@ similarity index 100%
 rename from frost-secp256k1/src/keys/refresh.rs
 rename to frost-secp256k1-evm/src/keys/refresh.rs
 diff --git a/frost-secp256k1/src/keys/repairable.rs b/frost-secp256k1-evm/src/keys/repairable.rs
-similarity index 90%
+similarity index 88%
 rename from frost-secp256k1/src/keys/repairable.rs
 rename to frost-secp256k1-evm/src/keys/repairable.rs
-index 98a2e7c..ac67379 100644
+index 48b1506..2e4b6a5 100644
 --- a/frost-secp256k1/src/keys/repairable.rs
 +++ b/frost-secp256k1-evm/src/keys/repairable.rs
-@@ -10,7 +10,7 @@ use alloc::collections::BTreeMap;
+@@ -11,13 +11,13 @@ use crate::keys::{KeyPackage, PublicKeyPackage};
  // (if it were below, the position of the import would vary between ciphersuites
  //  after `cargo fmt`)
- use crate::{frost, Ciphersuite, CryptoRng, Identifier, RngCore, Scalar};
+ use crate::{frost, Ciphersuite, CryptoRng, Identifier, RngCore};
 -use crate::{Error, Secp256K1Sha256};
 +use crate::{Error, Secp256K1Keccak256};
  
- use super::{SecretShare, VerifiableSecretSharingCommitment};
+ /// A delta value which is the output of part 1 of RTS.
+-pub type Delta = frost::keys::repairable::Delta<Secp256K1Sha256>;
++pub type Delta = frost::keys::repairable::Delta<Secp256K1Keccak256>;
  
-@@ -38,7 +38,7 @@ pub fn repair_share_step_1<C: Ciphersuite, R: RngCore + CryptoRng>(
+ /// A sigma value which is the output of part 2 of RTS.
+-pub type Sigma = frost::keys::repairable::Sigma<Secp256K1Sha256>;
++pub type Sigma = frost::keys::repairable::Sigma<Secp256K1Keccak256>;
+ 
+ /// Part 1 of RTS.
  ///
- /// Returns a scalar
- pub fn repair_share_step_2(deltas_j: &[Scalar]) -> Scalar {
--    frost::keys::repairable::repair_share_step_2::<Secp256K1Sha256>(deltas_j)
-+    frost::keys::repairable::repair_share_step_2::<Secp256K1Keccak256>(deltas_j)
+@@ -40,7 +40,7 @@ pub fn repair_share_part1<C: Ciphersuite, R: RngCore + CryptoRng>(
+ /// Generates the "sigma" value from all `deltas` received from all helpers.
+ /// The "sigma" value must be sent to the participant repairing their share.
+ pub fn repair_share_part2(deltas: &[Delta]) -> Sigma {
+-    frost::keys::repairable::repair_share_part2::<Secp256K1Sha256>(deltas)
++    frost::keys::repairable::repair_share_part2::<Secp256K1Keccak256>(deltas)
  }
  
- /// Step 3 of RTS
-@@ -61,7 +61,7 @@ mod tests {
+ /// Part 3 of RTS.
+@@ -67,7 +67,7 @@ mod tests {
  
      use serde_json::Value;
  
@@ -436,34 +475,34 @@ index 98a2e7c..ac67379 100644
  
      lazy_static! {
          pub static ref REPAIR_SHARE: Value =
-@@ -73,18 +73,20 @@ mod tests {
-     fn check_repair_share_step_1() {
+@@ -79,18 +79,20 @@ mod tests {
+     fn check_repair_share_part1() {
          let rng = rand::rngs::OsRng;
  
--        frost_core::tests::repairable::check_repair_share_step_1::<Secp256K1Sha256, _>(rng);
-+        frost_core::tests::repairable::check_repair_share_step_1::<Secp256K1Keccak256, _>(rng);
+-        frost_core::tests::repairable::check_repair_share_part1::<Secp256K1Sha256, _>(rng);
++        frost_core::tests::repairable::check_repair_share_part1::<Secp256K1Keccak256, _>(rng);
      }
  
      #[test]
-     fn check_repair_share_step_2() {
--        frost_core::tests::repairable::check_repair_share_step_2::<Secp256K1Sha256>(&REPAIR_SHARE);
-+        frost_core::tests::repairable::check_repair_share_step_2::<Secp256K1Keccak256>(
+     fn check_repair_share_part2() {
+-        frost_core::tests::repairable::check_repair_share_part2::<Secp256K1Sha256>(&REPAIR_SHARE);
++        frost_core::tests::repairable::check_repair_share_part2::<Secp256K1Keccak256>(
 +            &REPAIR_SHARE,
 +        );
      }
  
      #[test]
-     fn check_repair_share_step_3() {
+     fn check_repair_share_part3() {
          let rng = rand::rngs::OsRng;
--        frost_core::tests::repairable::check_repair_share_step_3::<Secp256K1Sha256, _>(
-+        frost_core::tests::repairable::check_repair_share_step_3::<Secp256K1Keccak256, _>(
+-        frost_core::tests::repairable::check_repair_share_part3::<Secp256K1Sha256, _>(
++        frost_core::tests::repairable::check_repair_share_part3::<Secp256K1Keccak256, _>(
              rng,
              &REPAIR_SHARE,
          );
-@@ -94,7 +96,7 @@ mod tests {
-     fn check_repair_share_step_1_fails_with_invalid_min_signers() {
+@@ -100,7 +102,7 @@ mod tests {
+     fn check_repair_share_part1_fails_with_invalid_min_signers() {
          let rng = rand::rngs::OsRng;
-         frost_core::tests::repairable::check_repair_share_step_1_fails_with_invalid_min_signers::<
+         frost_core::tests::repairable::check_repair_share_part1_fails_with_invalid_min_signers::<
 -            Secp256K1Sha256,
 +            Secp256K1Keccak256,
              _,
@@ -473,10 +512,10 @@ diff --git a/frost-secp256k1/src/lib.rs b/frost-secp256k1-evm/src/lib.rs
 similarity index 88%
 rename from frost-secp256k1/src/lib.rs
 rename to frost-secp256k1-evm/src/lib.rs
-index 9485a23..581c6f7 100644
+index bebcd1f..900dc64 100644
 --- a/frost-secp256k1/src/lib.rs
 +++ b/frost-secp256k1-evm/src/lib.rs
-@@ -21,7 +21,7 @@ use k256::{
+@@ -20,7 +20,7 @@ use k256::{
      AffinePoint, ProjectivePoint, Scalar,
  };
  use rand_core::{CryptoRng, RngCore};
@@ -485,7 +524,7 @@ index 9485a23..581c6f7 100644
  
  use frost_core as frost;
  
-@@ -35,9 +35,9 @@ pub use frost_core::{Ciphersuite, Field, FieldError, Group, GroupError};
+@@ -34,9 +34,9 @@ pub use frost_core::{Ciphersuite, Field, FieldError, Group, GroupError};
  pub use rand_core;
  
  /// An error.
@@ -497,7 +536,7 @@ index 9485a23..581c6f7 100644
  #[derive(Clone, Copy)]
  pub struct Secp256K1ScalarField;
  
-@@ -86,7 +86,7 @@ impl Field for Secp256K1ScalarField {
+@@ -85,7 +85,7 @@ impl Field for Secp256K1ScalarField {
      }
  }
  
@@ -506,7 +545,7 @@ index 9485a23..581c6f7 100644
  #[derive(Clone, Copy, PartialEq, Eq)]
  pub struct Secp256K1Group;
  
-@@ -149,7 +149,7 @@ impl Group for Secp256K1Group {
+@@ -148,7 +148,7 @@ impl Group for Secp256K1Group {
  }
  
  fn hash_to_array(inputs: &[&[u8]]) -> [u8; 32] {
@@ -515,7 +554,7 @@ index 9485a23..581c6f7 100644
      for i in inputs {
          h.update(i);
      }
-@@ -160,7 +160,7 @@ fn hash_to_array(inputs: &[&[u8]]) -> [u8; 32] {
+@@ -159,7 +159,7 @@ fn hash_to_array(inputs: &[&[u8]]) -> [u8; 32] {
  
  fn hash_to_scalar(domain: &[&[u8]], msg: &[u8]) -> Scalar {
      let mut u = [Secp256K1ScalarField::zero()];
@@ -524,7 +563,7 @@ index 9485a23..581c6f7 100644
          .expect("should never return error according to error cases described in ExpandMsgXmd");
      u[0]
  }
-@@ -168,13 +168,13 @@ fn hash_to_scalar(domain: &[&[u8]], msg: &[u8]) -> Scalar {
+@@ -167,13 +167,13 @@ fn hash_to_scalar(domain: &[&[u8]], msg: &[u8]) -> Scalar {
  /// Context string from the ciphersuite in the [spec].
  ///
  /// [spec]: https://datatracker.ietf.org/doc/html/rfc9591#section-6.5-1
@@ -542,7 +581,7 @@ index 9485a23..581c6f7 100644
      const ID: &'static str = CONTEXT_STRING;
  
      type Group = Secp256K1Group;
-@@ -183,53 +183,53 @@ impl Ciphersuite for Secp256K1Sha256 {
+@@ -182,53 +182,53 @@ impl Ciphersuite for Secp256K1Sha256 {
  
      type SignatureSerialization = [u8; 65];
  
@@ -604,7 +643,7 @@ index 9485a23..581c6f7 100644
      fn hash_randomizer(m: &[u8]) -> Option<<<Self::Group as Group>::Field as Field>::Scalar> {
          Some(hash_to_scalar(
              &[CONTEXT_STRING.as_bytes(), b"randomizer"],
-@@ -238,12 +238,12 @@ impl RandomizedCiphersuite for Secp256K1Sha256 {
+@@ -237,12 +237,12 @@ impl RandomizedCiphersuite for Secp256K1Sha256 {
      }
  }
  
@@ -620,7 +659,7 @@ index 9485a23..581c6f7 100644
  pub mod keys {
      use super::*;
  
-@@ -297,7 +297,7 @@ pub mod keys {
+@@ -296,7 +296,7 @@ pub mod keys {
      ///
      /// # Security
      ///
@@ -629,7 +668,7 @@ index 9485a23..581c6f7 100644
      /// .into(), which under the hood also performs validation.
      pub type SecretShare = frost::keys::SecretShare<S>;
  
-@@ -307,7 +307,7 @@ pub mod keys {
+@@ -306,7 +306,7 @@ pub mod keys {
      /// A public group element that represents a single signer's public verification share.
      pub type VerifyingShare = frost::keys::VerifyingShare<S>;
  
@@ -638,7 +677,7 @@ index 9485a23..581c6f7 100644
      /// a DKG.
      ///
      /// When using a central dealer, [`SecretShare`]s are distributed to
-@@ -340,13 +340,13 @@ pub mod keys {
+@@ -339,13 +339,13 @@ pub mod keys {
      pub mod repairable;
  }
  
@@ -654,7 +693,7 @@ index 9485a23..581c6f7 100644
      ///
      /// Note that [`SigningNonces`] must be used *only once* for a signing
      /// operation; re-using nonces will result in leakage of a signer's long-lived
-@@ -378,11 +378,11 @@ pub mod round1 {
+@@ -377,11 +377,11 @@ pub mod round1 {
  /// each signing party.
  pub type SigningPackage = frost::SigningPackage<S>;
  
@@ -668,7 +707,7 @@ index 9485a23..581c6f7 100644
      /// shares into the joint signature.
      pub type SignatureShare = frost::round2::SignatureShare<S>;
  
-@@ -403,10 +403,10 @@ pub mod round2 {
+@@ -402,10 +402,10 @@ pub mod round2 {
      }
  }
  
@@ -681,8 +720,8 @@ index 9485a23..581c6f7 100644
  /// aggregates the shares into a signature to publish.
  ///
  /// Resulting signature is compatible with verification of a plain Schnorr
-@@ -429,8 +429,8 @@ pub fn aggregate(
-     frost::aggregate(signing_package, signature_shares, pubkeys)
+@@ -447,8 +447,8 @@ pub fn aggregate_custom(
+     )
  }
  
 -/// A signing key for a Schnorr signature on FROST(secp256k1, SHA-256).
@@ -692,6 +731,10 @@ index 9485a23..581c6f7 100644
 -/// A valid verifying key for Schnorr signatures on FROST(secp256k1, SHA-256).
 +/// A valid verifying key for Schnorr signatures on FROST(secp256k1, KECCAK-256).
  pub type VerifyingKey = frost_core::VerifyingKey<S>;
+diff --git a/frost-secp256k1/src/rerandomized.rs b/frost-secp256k1-evm/src/rerandomized.rs
+similarity index 100%
+rename from frost-secp256k1/src/rerandomized.rs
+rename to frost-secp256k1-evm/src/rerandomized.rs
 diff --git a/frost-secp256k1/src/tests.rs b/frost-secp256k1-evm/src/tests.rs
 similarity index 100%
 rename from frost-secp256k1/src/tests.rs
@@ -941,7 +984,7 @@ diff --git a/frost-secp256k1/tests/helpers/samples.rs b/frost-secp256k1-evm/test
 similarity index 98%
 rename from frost-secp256k1/tests/helpers/samples.rs
 rename to frost-secp256k1-evm/tests/helpers/samples.rs
-index a69632d..afeae5f 100644
+index d9cbf5b..ce5340a 100644
 --- a/frost-secp256k1/tests/helpers/samples.rs
 +++ b/frost-secp256k1-evm/tests/helpers/samples.rs
 @@ -3,7 +3,7 @@
@@ -1212,7 +1255,7 @@ diff --git a/frost-secp256k1/tests/integration_tests.rs b/frost-secp256k1-evm/te
 similarity index 85%
 rename from frost-secp256k1/tests/integration_tests.rs
 rename to frost-secp256k1-evm/tests/integration_tests.rs
-index 0356b0a..738cfde 100644
+index 343214e..b9132c4 100644
 --- a/frost-secp256k1/tests/integration_tests.rs
 +++ b/frost-secp256k1-evm/tests/integration_tests.rs
 @@ -1,17 +1,17 @@
@@ -1306,69 +1349,16 @@ index 0356b0a..738cfde 100644
          _,
      >(rng);
  }
-@@ -103,7 +104,7 @@ fn check_refresh_shares_with_dealer_fails_with_invalid_min_signers() {
-     let error = Error::InvalidMinSigners;
- 
-     frost_core::tests::refresh::check_refresh_shares_with_dealer_fails_with_invalid_signers::<
--        Secp256K1Sha256,
-+        Secp256K1Keccak256,
-         _,
-     >(max_signers, min_signers, &identifiers, error, rng);
- }
-@@ -119,10 +120,10 @@ fn check_refresh_shares_with_dealer_fails_with_unequal_num_identifiers_and_max_s
-     ];
-     let min_signers = 3;
-     let max_signers = 3;
--    let error: frost_core::Error<Secp256K1Sha256> = Error::IncorrectNumberOfIdentifiers;
-+    let error: frost_core::Error<Secp256K1Keccak256> = Error::IncorrectNumberOfIdentifiers;
- 
-     frost_core::tests::refresh::check_refresh_shares_with_dealer_fails_with_invalid_signers::<
--        Secp256K1Sha256,
-+        Secp256K1Keccak256,
-         _,
-     >(max_signers, min_signers, &identifiers, error, rng);
- }
-@@ -138,10 +139,10 @@ fn check_refresh_shares_with_dealer_fails_with_min_signers_greater_than_max() {
-     ];
-     let min_signers = 6;
-     let max_signers = 4;
--    let error: frost_core::Error<Secp256K1Sha256> = Error::InvalidMinSigners;
-+    let error: frost_core::Error<Secp256K1Keccak256> = Error::InvalidMinSigners;
- 
-     frost_core::tests::refresh::check_refresh_shares_with_dealer_fails_with_invalid_signers::<
--        Secp256K1Sha256,
-+        Secp256K1Keccak256,
-         _,
-     >(max_signers, min_signers, &identifiers, error, rng);
- }
-@@ -155,7 +156,7 @@ fn check_refresh_shares_with_dealer_fails_with_invalid_max_signers() {
-     let error = Error::InvalidMaxSigners;
- 
-     frost_core::tests::refresh::check_refresh_shares_with_dealer_fails_with_invalid_signers::<
--        Secp256K1Sha256,
-+        Secp256K1Keccak256,
-         _,
-     >(max_signers, min_signers, &identifiers, error, rng);
- }
-@@ -174,7 +175,7 @@ fn check_refresh_shares_with_dealer_fails_with_invalid_identifier() {
+@@ -101,7 +102,7 @@ fn check_refresh_shares_with_dealer_fails_with_invalid_identifier() {
      let error = Error::UnknownIdentifier;
  
      frost_core::tests::refresh::check_refresh_shares_with_dealer_fails_with_invalid_signers::<
 -        Secp256K1Sha256,
 +        Secp256K1Keccak256,
          _,
-     >(max_signers, min_signers, &identifiers, error, rng);
+     >(&identifiers, error, rng);
  }
-@@ -184,7 +185,7 @@ fn check_refresh_shares_with_dealer_fails_with_different_min_signers() {
-     let rng = rand::rngs::OsRng;
- 
-     frost_core::tests::refresh::check_refresh_shares_with_dealer_fails_with_different_min_signers::<
--        Secp256K1Sha256,
-+        Secp256K1Keccak256,
-         _,
-     >(rng);
- }
-@@ -193,23 +194,24 @@ fn check_refresh_shares_with_dealer_fails_with_different_min_signers() {
+@@ -110,23 +111,24 @@ fn check_refresh_shares_with_dealer_fails_with_invalid_identifier() {
  fn check_refresh_shares_with_dkg() {
      let rng = rand::rngs::OsRng;
  
@@ -1398,7 +1388,7 @@ index 0356b0a..738cfde 100644
  }
  
  #[test]
-@@ -221,7 +223,7 @@ fn check_sign_with_dealer_fails_with_invalid_min_signers() {
+@@ -138,7 +140,7 @@ fn check_sign_with_dealer_fails_with_invalid_min_signers() {
      let error = Error::InvalidMinSigners;
  
      frost_core::tests::ciphersuite_generic::check_sign_with_dealer_fails_with_invalid_signers::<
@@ -1407,7 +1397,7 @@ index 0356b0a..738cfde 100644
          _,
      >(min_signers, max_signers, error, rng);
  }
-@@ -232,10 +234,10 @@ fn check_sign_with_dealer_fails_with_min_signers_greater_than_max() {
+@@ -149,10 +151,10 @@ fn check_sign_with_dealer_fails_with_min_signers_greater_than_max() {
  
      let min_signers = 3;
      let max_signers = 2;
@@ -1420,7 +1410,7 @@ index 0356b0a..738cfde 100644
          _,
      >(min_signers, max_signers, error, rng);
  }
-@@ -249,7 +251,7 @@ fn check_sign_with_dealer_fails_with_invalid_max_signers() {
+@@ -166,7 +168,7 @@ fn check_sign_with_dealer_fails_with_invalid_max_signers() {
      let error = Error::InvalidMaxSigners;
  
      frost_core::tests::ciphersuite_generic::check_sign_with_dealer_fails_with_invalid_signers::<
@@ -1429,19 +1419,16 @@ index 0356b0a..738cfde 100644
          _,
      >(min_signers, max_signers, error, rng);
  }
-@@ -257,9 +259,9 @@ fn check_sign_with_dealer_fails_with_invalid_max_signers() {
- /// This is testing that Shamir's secret sharing to compute and arbitrary
- /// value is working.
+@@ -176,7 +178,7 @@ fn check_sign_with_dealer_fails_with_invalid_max_signers() {
  #[test]
--fn check_share_generation_secp256k1_sha256() {
-+fn check_share_generation_secp256k1_keccak256() {
+ fn check_share_generation_secp256k1_sha256() {
      let rng = rand::rngs::OsRng;
 -    frost_core::tests::ciphersuite_generic::check_share_generation::<Secp256K1Sha256, _>(rng);
 +    frost_core::tests::ciphersuite_generic::check_share_generation::<Secp256K1Keccak256, _>(rng);
  }
  
  #[test]
-@@ -271,7 +273,7 @@ fn check_share_generation_fails_with_invalid_min_signers() {
+@@ -188,7 +190,7 @@ fn check_share_generation_fails_with_invalid_min_signers() {
      let error = Error::InvalidMinSigners;
  
      frost_core::tests::ciphersuite_generic::check_share_generation_fails_with_invalid_signers::<
@@ -1450,7 +1437,7 @@ index 0356b0a..738cfde 100644
          _,
      >(min_signers, max_signers, error, rng);
  }
-@@ -282,10 +284,10 @@ fn check_share_generation_fails_with_min_signers_greater_than_max() {
+@@ -199,10 +201,10 @@ fn check_share_generation_fails_with_min_signers_greater_than_max() {
  
      let min_signers = 3;
      let max_signers = 2;
@@ -1463,7 +1450,7 @@ index 0356b0a..738cfde 100644
          _,
      >(min_signers, max_signers, error, rng);
  }
-@@ -299,7 +301,7 @@ fn check_share_generation_fails_with_invalid_max_signers() {
+@@ -216,7 +218,7 @@ fn check_share_generation_fails_with_invalid_max_signers() {
      let error = Error::InvalidMaxSigners;
  
      frost_core::tests::ciphersuite_generic::check_share_generation_fails_with_invalid_signers::<
@@ -1472,7 +1459,7 @@ index 0356b0a..738cfde 100644
          _,
      >(min_signers, max_signers, error, rng);
  }
-@@ -318,29 +320,29 @@ lazy_static! {
+@@ -235,29 +237,29 @@ lazy_static! {
  
  #[test]
  fn check_sign_with_test_vectors() {
@@ -1507,7 +1494,7 @@ index 0356b0a..738cfde 100644
  }
  
  // Explicit test which is used in a documentation snippet
-@@ -359,7 +361,7 @@ fn check_sign_with_dealer_and_identifiers() {
+@@ -276,7 +278,7 @@ fn check_sign_with_dealer_and_identifiers() {
      let rng = rand::rngs::OsRng;
  
      frost_core::tests::ciphersuite_generic::check_sign_with_dealer_and_identifiers::<
@@ -1516,7 +1503,7 @@ index 0356b0a..738cfde 100644
          _,
      >(rng);
  }
-@@ -367,16 +369,17 @@ fn check_sign_with_dealer_and_identifiers() {
+@@ -284,16 +286,17 @@ fn check_sign_with_dealer_and_identifiers() {
  #[test]
  fn check_sign_with_missing_identifier() {
      let rng = rand::rngs::OsRng;
@@ -1538,11 +1525,21 @@ index 0356b0a..738cfde 100644
          _,
      >(rng);
  }
+@@ -302,7 +305,8 @@ fn check_sign_with_incorrect_commitments() {
+ async fn check_async_sign_with_dealer() {
+     tokio::spawn(async {
+         let rng = rand::rngs::OsRng;
+-        frost_core::tests::ciphersuite_generic::async_check_sign::<Secp256K1Sha256, _>(rng).await;
++        frost_core::tests::ciphersuite_generic::async_check_sign::<Secp256K1Keccak256, _>(rng)
++            .await;
+     })
+     .await
+     .unwrap();
 diff --git a/frost-secp256k1/tests/recreation_tests.rs b/frost-secp256k1-evm/tests/recreation_tests.rs
 similarity index 99%
 rename from frost-secp256k1/tests/recreation_tests.rs
 rename to frost-secp256k1-evm/tests/recreation_tests.rs
-index e61b303..21689ef 100644
+index 1e8eb20..1bd6da4 100644
 --- a/frost-secp256k1/tests/recreation_tests.rs
 +++ b/frost-secp256k1-evm/tests/recreation_tests.rs
 @@ -1,7 +1,7 @@
@@ -1574,10 +1571,10 @@ index c7845f1..79c53eb 100644
 +        frost_rerandomized::tests::check_randomized_sign_with_dealer::<Secp256K1Keccak256, _>(rng);
  }
 diff --git a/frost-secp256k1/tests/serde_tests.rs b/frost-secp256k1-evm/tests/serde_tests.rs
-similarity index 89%
+similarity index 90%
 rename from frost-secp256k1/tests/serde_tests.rs
 rename to frost-secp256k1-evm/tests/serde_tests.rs
-index 82a0735..f30efd8 100644
+index 5b02fda..b937a4e 100644
 --- a/frost-secp256k1/tests/serde_tests.rs
 +++ b/frost-secp256k1-evm/tests/serde_tests.rs
 @@ -2,7 +2,7 @@
@@ -1840,7 +1837,16 @@ index 82a0735..f30efd8 100644
          },
          "verifying_shares": {
            "000000000000000000000000000000000000000000000000000000000000002a": "0279be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798"
-@@ -462,7 +462,7 @@ fn check_public_key_package_serialization() {
+@@ -460,7 +460,7 @@ fn check_public_key_package_serialization() {
+     let json = r#"{
+         "header": {
+           "version": 0,
+-          "ciphersuite": "FROST-secp256k1-SHA256-v1"
++          "ciphersuite": "FROST-secp256k1-KECCAK256-v1"
+         },
+         "verifying_shares": {
+           "000000000000000000000000000000000000000000000000000000000000002a": "0279be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798"
+@@ -478,7 +478,7 @@ fn check_public_key_package_serialization() {
      let invalid_json = r#"{
          "header": {
            "version": 0,
@@ -1849,7 +1855,7 @@ index 82a0735..f30efd8 100644
          },
          "verifying_shares": {
            "0000000000000000000000000000000000000000000000000000000000000000": "0279be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798"
-@@ -475,7 +475,7 @@ fn check_public_key_package_serialization() {
+@@ -491,7 +491,7 @@ fn check_public_key_package_serialization() {
      let invalid_json = r#"{
          "header": {
            "version": 0,
@@ -1858,7 +1864,7 @@ index 82a0735..f30efd8 100644
          },
          "verifying_shares": {
            "000000000000000000000000000000000000000000000000000000000000002a": "0279be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798"
-@@ -488,7 +488,7 @@ fn check_public_key_package_serialization() {
+@@ -504,7 +504,7 @@ fn check_public_key_package_serialization() {
      let invalid_json = r#"{
          "header": {
            "version": 0,
@@ -1867,7 +1873,7 @@ index 82a0735..f30efd8 100644
          },
          "verifying_shares": {
            "000000000000000000000000000000000000000000000000000000000000002a": "0279be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798"
-@@ -500,7 +500,7 @@ fn check_public_key_package_serialization() {
+@@ -516,7 +516,7 @@ fn check_public_key_package_serialization() {
      let invalid_json = r#"{
          "header": {
            "version": 0,
@@ -1876,7 +1882,7 @@ index 82a0735..f30efd8 100644
          },
          "verifying_shares": {
            "000000000000000000000000000000000000000000000000000000000000002a": "0279be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798"
-@@ -524,7 +524,7 @@ fn check_round1_package_serialization() {
+@@ -540,7 +540,7 @@ fn check_round1_package_serialization() {
      let json = r#"{
          "header": {
            "version": 0,
@@ -1885,7 +1891,7 @@ index 82a0735..f30efd8 100644
          },
          "commitment": [
            "0279be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798"
-@@ -541,7 +541,7 @@ fn check_round1_package_serialization() {
+@@ -557,7 +557,7 @@ fn check_round1_package_serialization() {
      let invalid_json = r#"{
          "header": {
            "version": 0,
@@ -1894,7 +1900,7 @@ index 82a0735..f30efd8 100644
          },
          "commitment": [
            "0279be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798"
-@@ -554,7 +554,7 @@ fn check_round1_package_serialization() {
+@@ -570,7 +570,7 @@ fn check_round1_package_serialization() {
      let invalid_json = r#"{
          "header": {
            "version": 0,
@@ -1903,7 +1909,7 @@ index 82a0735..f30efd8 100644
          },
          "commitment": [
            "0279be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798"
-@@ -566,7 +566,7 @@ fn check_round1_package_serialization() {
+@@ -582,7 +582,7 @@ fn check_round1_package_serialization() {
      let invalid_json = r#"{
          "header": {
            "version": 0,
@@ -1912,7 +1918,7 @@ index 82a0735..f30efd8 100644
          },
          "commitment": [
            "0279be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798"
-@@ -590,7 +590,7 @@ fn check_round2_package_serialization() {
+@@ -606,7 +606,7 @@ fn check_round2_package_serialization() {
      let json = r#"{
          "header": {
            "version": 0,
@@ -1921,7 +1927,7 @@ index 82a0735..f30efd8 100644
          },
          "signing_share": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa9d1c9e899ca306ad27fe1945de0242b81"
        }"#;
-@@ -604,7 +604,7 @@ fn check_round2_package_serialization() {
+@@ -620,7 +620,7 @@ fn check_round2_package_serialization() {
      let invalid_json = r#"{
          "header": {
            "version": 0,
@@ -1930,7 +1936,7 @@ index 82a0735..f30efd8 100644
          },
          "foo": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa9d1c9e899ca306ad27fe1945de0242b81"
        }"#;
-@@ -614,7 +614,7 @@ fn check_round2_package_serialization() {
+@@ -630,7 +630,7 @@ fn check_round2_package_serialization() {
      let invalid_json = r#"{
          "header": {
            "version": 0,
@@ -1939,7 +1945,7 @@ index 82a0735..f30efd8 100644
          }
        }"#;
      assert!(serde_json::from_str::<round2::Package>(invalid_json).is_err());
-@@ -623,7 +623,7 @@ fn check_round2_package_serialization() {
+@@ -639,7 +639,7 @@ fn check_round2_package_serialization() {
      let invalid_json = r#"{
          "header": {
            "version": 0,
@@ -1952,7 +1958,7 @@ diff --git a/frost-secp256k1/tests/serialization_tests.rs b/frost-secp256k1-evm/
 similarity index 99%
 rename from frost-secp256k1/tests/serialization_tests.rs
 rename to frost-secp256k1-evm/tests/serialization_tests.rs
-index ec8d6f8..8c94277 100644
+index 08e53d3..8a36c15 100644
 --- a/frost-secp256k1/tests/serialization_tests.rs
 +++ b/frost-secp256k1-evm/tests/serialization_tests.rs
 @@ -2,7 +2,7 @@
@@ -1979,6 +1985,21 @@ index 0e66805..569158d 100644
  ---
 -00eed6b1b1000000000000000000000000000000000000000000000000000000000000002aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa9d1c9e899ca306ad27fe1945de0242b810279be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f817980279be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f8179802
 +004691fb7b000000000000000000000000000000000000000000000000000000000000002aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa9d1c9e899ca306ad27fe1945de0242b810279be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f817980279be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f8179802
+diff --git a/frost-secp256k1/tests/snapshots/serialization_tests__check_public_key_package_new_postcard_serialization.snap b/frost-secp256k1-evm/tests/snapshots/serialization_tests__check_public_key_package_new_postcard_serialization.snap
+similarity index 61%
+rename from frost-secp256k1/tests/snapshots/serialization_tests__check_public_key_package_new_postcard_serialization.snap
+rename to frost-secp256k1-evm/tests/snapshots/serialization_tests__check_public_key_package_new_postcard_serialization.snap
+index 0435fda..56d7e4b 100644
+--- a/frost-secp256k1/tests/snapshots/serialization_tests__check_public_key_package_new_postcard_serialization.snap
++++ b/frost-secp256k1-evm/tests/snapshots/serialization_tests__check_public_key_package_new_postcard_serialization.snap
+@@ -1,5 +1,5 @@
+ ---
+-source: frost-secp256k1/tests/serialization_tests.rs
++source: frost-secp256k1-evm/tests/serialization_tests.rs
+ expression: "hex::encode(&bytes)"
+ ---
+-00eed6b1b101000000000000000000000000000000000000000000000000000000000000002a0279be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f817980279be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f817980102
++004691fb7b01000000000000000000000000000000000000000000000000000000000000002a0279be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f817980279be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f817980102
 diff --git a/frost-secp256k1/tests/snapshots/serialization_tests__check_public_key_package_postcard_serialization.snap b/frost-secp256k1-evm/tests/snapshots/serialization_tests__check_public_key_package_postcard_serialization.snap
 similarity index 60%
 rename from frost-secp256k1/tests/snapshots/serialization_tests__check_public_key_package_postcard_serialization.snap
@@ -2310,10 +2331,10 @@ index a4c3b17..0000000
 ----
 -00eed6b1b101000000000000000000000000000000000000000000000000000000000000002a00eed6b1b10279be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f8179802c6047f9441ed7d6d3045406e95c07cd85c778e4b8cef3ca7abac09b95c709ee50b68656c6c6f20776f726c64
 diff --git a/gencode/src/main.rs b/gencode/src/main.rs
-index 8a420fc..6a390a8 100644
+index 9dee2d5..a199390 100644
 --- a/gencode/src/main.rs
 +++ b/gencode/src/main.rs
-@@ -281,15 +281,15 @@ fn main() -> ExitCode {
+@@ -292,17 +292,17 @@ fn main() -> ExitCode {
              ],
          ),
          (
@@ -2331,11 +2352,14 @@ index 8a420fc..6a390a8 100644
 -                "secp256k1",
 +                "FROST(secp256k1, KECCAK-256)",
 +                "FROST-secp256k1-KECCAK256-v1",
-+                "secp256k1_keccak256",
++                "secp256k1_evm_keccak256",
 +                "secp256k1_evm",
                  "<S>",
+-                "*This crate is not compatible with Bitcoin BIP-340 (Taproot) signatures. Use [frost-secp256k1-tr](https://crates.io/crates/frost-secp256k1-tr) instead*",
++                "<!-- PLACEHOLDER -->",
              ],
          ),
+         (
 -- 
-2.50.1
+2.51.0
 

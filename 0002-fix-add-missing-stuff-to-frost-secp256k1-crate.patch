@@ -1,8 +1,8 @@
-From c1d56da817c1dfa6b5ac70f395321a080fee530d Mon Sep 17 00:00:00 2001
+From 2a58cd435ae706f582d9a3177b8f99e8d5bc6faa Mon Sep 17 00:00:00 2001
 From: StackOverflowExcept1on
  <109800286+StackOverflowExcept1on@users.noreply.github.com>
-Date: Sat, 4 Jan 2025 14:17:22 +0300
-Subject: [PATCH] fix: add missing stuff to frost-secp256k1
+Date: Fri, 24 Apr 2026 12:25:07 +0300
+Subject: [PATCH] fix: add missing stuff to `frost-secp256k1` crate
 
 ---
  .github/workflows/main.yml           |  2 +-
@@ -13,26 +13,26 @@ Subject: [PATCH] fix: add missing stuff to frost-secp256k1
  book/src/user.md                     |  1 +
  book/src/user/frost-secp256k1.md     |  1 +
  book/src/user/frost-secp256k1/dkg.md |  1 +
- gencode/src/main.rs                  | 13 +++++++++++++
- 9 files changed, 27 insertions(+), 8 deletions(-)
+ gencode/src/main.rs                  | 14 ++++++++++++++
+ 9 files changed, 28 insertions(+), 8 deletions(-)
  create mode 100644 book/src/user/frost-secp256k1.md
  create mode 100644 book/src/user/frost-secp256k1/dkg.md
 
 diff --git a/.github/workflows/main.yml b/.github/workflows/main.yml
-index 9b9040b..663f4fe 100644
+index 55d1716..b4f2a9a 100644
 --- a/.github/workflows/main.yml
 +++ b/.github/workflows/main.yml
-@@ -69,7 +69,7 @@ jobs:
+@@ -72,7 +72,7 @@ jobs:
      # Skip ed448 which does not support it.
      strategy:
        matrix:
 -        crate: [ristretto255, ed25519, p256, secp256k1-evm, secp256k1-tr, rerandomized]
 +        crate: [ristretto255, ed25519, p256, secp256k1, secp256k1-evm, secp256k1-tr, rerandomized]
      steps:
-     - uses: actions/checkout@v4.2.2
+     - uses: actions/checkout@v6.0.2
      - uses: dtolnay/rust-toolchain@master
 diff --git a/Cargo.toml b/Cargo.toml
-index 621852d..7f5d0a3 100644
+index 8f78ff7..9bca9b3 100644
 --- a/Cargo.toml
 +++ b/Cargo.toml
 @@ -6,6 +6,7 @@ members = [
@@ -44,7 +44,7 @@ index 621852d..7f5d0a3 100644
      "frost-secp256k1-tr",
      "frost-rerandomized",
 diff --git a/README.md b/README.md
-index 01988c3..0888d21 100644
+index b3278f5..c94b291 100644
 --- a/README.md
 +++ b/README.md
 @@ -9,6 +9,7 @@
@@ -56,10 +56,10 @@ index 01988c3..0888d21 100644
  | secp256k1 ciphersuite (Taproot) | [`frost-secp256k1-tr`]  | [![crates.io](https://img.shields.io/crates/v/frost-secp256k1-tr.svg)](https://crates.io/crates/frost-secp256k1-tr)   | [![Documentation](https://docs.rs/frost-secp256k1-tr/badge.svg)](https://docs.rs/frost-secp256k1-tr)   |
  | Generic Re-randomized FROST     | [`frost-rerandomized`]  | [![crates.io](https://img.shields.io/crates/v/frost-rerandomized.svg)](https://crates.io/crates/frost-rerandomized)   | [![Documentation](https://docs.rs/frost-rerandomized/badge.svg)](https://docs.rs/frost-rerandomized)   |
 diff --git a/book/src/dev/release-checklist.md b/book/src/dev/release-checklist.md
-index 881176b..826fe98 100644
+index 748be03..b80ada1 100644
 --- a/book/src/dev/release-checklist.md
 +++ b/book/src/dev/release-checklist.md
-@@ -81,7 +81,7 @@ releases easier.
+@@ -80,7 +80,7 @@ releases easier.
  
  - Publish it with `cargo publish -p frost-rerandomized`
  
@@ -68,7 +68,7 @@ index 881176b..826fe98 100644
  
      - If you get an error like this:
  
-@@ -91,9 +91,9 @@ releases easier.
+@@ -90,9 +90,9 @@ releases easier.
  
  - Draft and publish releases for each of those crates:
  
@@ -80,7 +80,7 @@ index 881176b..826fe98 100644
  
  
  ## Confirm
-@@ -105,6 +105,7 @@ releases easier.
+@@ -104,6 +104,7 @@ releases easier.
      - [Frost ed448](https://crates.io/crates/frost-ed448/versions)
      - [Frost p256](https://crates.io/crates/frost-p256/versions)
      - [Frost ristretto255](https://crates.io/crates/frost-ristretto255/versions)
@@ -89,7 +89,7 @@ index 881176b..826fe98 100644
      - [Frost secp256k1 tr](https://crates.io/crates/frost-secp256k1-tr/versions)
      - [Frost rerandomized](https://crates.io/crates/frost-rerandomized/versions)
 diff --git a/book/src/tutorial.md b/book/src/tutorial.md
-index 37c1127..a06d4d6 100644
+index 085bdb7..fa98b28 100644
 --- a/book/src/tutorial.md
 +++ b/book/src/tutorial.md
 @@ -5,10 +5,10 @@ a generic implementation of the protocol, which can't be used directly
@@ -135,11 +135,11 @@ index 0000000..d91ff24
 +{{#include ../../../../frost-secp256k1/dkg.md}}
 \ No newline at end of file
 diff --git a/gencode/src/main.rs b/gencode/src/main.rs
-index 6a390a8..a76e2e4 100644
+index a199390..8c2ef71 100644
 --- a/gencode/src/main.rs
 +++ b/gencode/src/main.rs
-@@ -280,6 +280,19 @@ fn main() -> ExitCode {
-                 "<E>",
+@@ -291,6 +291,20 @@ fn main() -> ExitCode {
+                 "<!-- PLACEHOLDER -->",
              ],
          ),
 +        (
@@ -153,11 +153,12 @@ index 6a390a8..a76e2e4 100644
 +                "secp256k1_sha256",
 +                "secp256k1",
 +                "<S>",
++                "*This crate is not compatible with Bitcoin BIP-340 (Taproot) signatures. Use [frost-secp256k1-tr](https://crates.io/crates/frost-secp256k1-tr) instead*",
 +            ],
 +        ),
          (
              "frost-secp256k1-evm",
              &[
 -- 
-2.34.1
+2.51.0
 

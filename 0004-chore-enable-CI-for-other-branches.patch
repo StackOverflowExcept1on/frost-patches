@@ -1,7 +1,7 @@
-From 50cea7fe4d056fca10359832b4cb70ab03cbdea7 Mon Sep 17 00:00:00 2001
+From 82a722d9fc99a80180f91227e6097c45026c2a36 Mon Sep 17 00:00:00 2001
 From: StackOverflowExcept1on
  <109800286+StackOverflowExcept1on@users.noreply.github.com>
-Date: Mon, 17 Feb 2025 20:14:09 +0300
+Date: Fri, 24 Apr 2026 12:51:33 +0300
 Subject: [PATCH] chore: enable CI for other branches
 
 ---
@@ -9,7 +9,7 @@ Subject: [PATCH] chore: enable CI for other branches
  1 file changed, 2 insertions(+), 2 deletions(-)
 
 diff --git a/.github/workflows/main.yml b/.github/workflows/main.yml
-index 77f6a63..a19de2e 100644
+index de6b9cf..1eb71eb 100644
 --- a/.github/workflows/main.yml
 +++ b/.github/workflows/main.yml
 @@ -3,10 +3,10 @@ name: CI
@@ -26,5 +26,5 @@ index 77f6a63..a19de2e 100644
  jobs:
    build_default:
 -- 
-2.34.1
+2.51.0
 
